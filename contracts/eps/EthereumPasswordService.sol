@@ -80,8 +80,9 @@ contract EthereumPasswordService is Ownable {
         );
 
         uint nonce = nonceOf[user];
+        uint fullhash = uint(keccak256(abi.encodePacked(expiration, block.chainid, nonce, datahash))) / 8; // 256b->254b
         require(
-            verifyProof(proof, pwdhash, datahash, expiration, nonce, allhash),
+            verifyProof(proof, pwdhash, fullhash, allhash),
             "EthereumPasswordService::verify: verify proof fail"
         );
 
@@ -95,9 +96,7 @@ contract EthereumPasswordService is Ownable {
     function verifyProof(
         uint[8] memory proof,
         uint pwdhash,
-        uint datahash,
-        uint expiration,
-        uint nonce,
+        uint fullhash, //254b
         uint allhash
     ) internal view returns (bool) {
         return
@@ -105,7 +104,7 @@ contract EthereumPasswordService is Ownable {
                 [proof[0], proof[1]],
                 [[proof[2], proof[3]], [proof[4], proof[5]]],
                 [proof[6], proof[7]],
-                [pwdhash, datahash, expiration, block.chainid, nonce, allhash]
+                [pwdhash, fullhash, allhash]
             );
     }
 }

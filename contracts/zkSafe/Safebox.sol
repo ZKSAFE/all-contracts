@@ -17,7 +17,7 @@ contract Safebox is Context {
 
     event WithdrawERC721(address indexed tokenAddr, uint tokenId);
 
-    event WithdrawETH(uint tokenId);
+    event WithdrawETH(uint amount);
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -88,7 +88,11 @@ contract Safebox is Context {
         uint datahash = uint(uint160(newOwner));
         eps.verify(owner(), proof, datahash, expiration, allhash);
 
-        SafeboxFactory(factory).changeSafeboxOwner{value: msg.value}(
+        _doTransferOwnership(newOwner);
+    }
+
+    function _doTransferOwnership(address newOwner) private {
+        SafeboxFactory(factory).changeSafeboxOwner{value: eps.fee()}(
             owner(),
             newOwner
         );
@@ -102,8 +106,7 @@ contract Safebox is Context {
         uint expiration,
         uint allhash
     ) external onlyOwner {
-        //must be 254b, not 256b
-        uint datahash = uint(keccak256(abi.encodePacked(amount))) / 8;
+        uint datahash = uint(keccak256(abi.encodePacked(amount)));
         eps.verify(owner(), proof, datahash, expiration, allhash);
 
         payable(owner()).transfer(amount);
@@ -118,8 +121,7 @@ contract Safebox is Context {
         uint expiration,
         uint allhash
     ) external onlyOwner {
-        //must be 254b, not 256b
-        uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, amount))) / 8;
+        uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, amount)));
         eps.verify(owner(), proof, datahash, expiration, allhash);
 
         IERC20(tokenAddr).safeTransfer(owner(), amount);
@@ -134,12 +136,117 @@ contract Safebox is Context {
         uint expiration,
         uint allhash
     ) external onlyOwner {
-        //must be 254b, not 256b
-        uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, tokenId))) / 8;
+        uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, tokenId)));
         eps.verify(owner(), proof, datahash, expiration, allhash);
 
         IERC721(tokenAddr).transferFrom(address(this), owner(), tokenId);
 
         emit WithdrawERC721(tokenAddr, tokenId);
+    }
+
+    ///////////////////////////////////
+    // SocialRecover
+    ///////////////////////////////////
+
+    event SetSocialRecover(address[] guardians, uint needGuardiansNum);
+
+    event Cover(
+        address indexed operator,
+        address indexed newOwner,
+        uint doneNum
+    );
+
+    address[] public guardians;
+    uint public needGuardiansNum;
+    address[] public doneGuardians;
+    address public prepareOwner;
+
+    function getSocialRecover()
+        public
+        view
+        returns (
+            address[] memory,
+            uint,
+            address[] memory
+        )
+    {
+        return (guardians, needGuardiansNum, doneGuardians);
+    }
+
+    function setSocialRecover(
+        uint[8] memory proof,
+        address[] memory _guardians,
+        uint _needGuardiansNum,
+        uint expiration,
+        uint allhash
+    ) external onlyOwner {
+        require(
+            _needGuardiansNum > 0 && _needGuardiansNum <= _guardians.length,
+            "setSocialRecover: needGuardiansNum error"
+        );
+
+        uint datahash = uint(
+            keccak256(abi.encodePacked(_guardians, _needGuardiansNum))
+        );
+
+        eps.verify(owner(), proof, datahash, expiration, allhash);
+
+        guardians = _guardians;
+        needGuardiansNum = _needGuardiansNum;
+        doneGuardians = new address[](_needGuardiansNum);
+        prepareOwner = address(0);
+
+        emit SetSocialRecover(_guardians, needGuardiansNum);
+    }
+
+    function transferOwnership2(address newOwner) external payable {
+        require(
+            newOwner != address(0),
+            "transferOwnership2: newOwner can't be 0x00"
+        );
+
+        bool isGuardian;
+        for (uint j = 0; j < guardians.length; ++j) {
+            if (guardians[j] == _msgSender()) {
+                isGuardian = true;
+                break;
+            }
+        }
+        require(isGuardian, "transferOwnership2: you're not Guardian");
+
+        if (prepareOwner == newOwner) {
+            uint insertIndex = 0;
+            bool insertIndexOnce;
+            for (uint i = 0; i < doneGuardians.length; ++i) {
+                if (!insertIndexOnce && doneGuardians[i] == address(0)) {
+                    insertIndex = i;
+                    insertIndexOnce = true;
+                }
+                require(
+                    doneGuardians[i] != _msgSender(),
+                    "transferOwnership2: don't repeat"
+                );
+            }
+
+            if (insertIndex == needGuardiansNum - 1) {
+                //fire!
+                _doTransferOwnership(newOwner);
+            } else {
+                doneGuardians[insertIndex] = _msgSender();
+            }
+
+            emit Cover(_msgSender(), newOwner, insertIndex + 1);
+        } else {
+            if (needGuardiansNum == 1) {
+                //fire!
+                _doTransferOwnership(newOwner);
+            } else {
+                doneGuardians = new address[](needGuardiansNum);
+                doneGuardians[0] = _msgSender();
+                prepareOwner = newOwner;
+            }
+
+            emit Cover(_msgSender(), newOwner, 1);
+        }
     }
 }
