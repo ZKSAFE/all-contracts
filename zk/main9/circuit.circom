@@ -32,8 +32,8 @@ template Main() {
     out[0] <== poseidon1.out; //pwdhash
 
     poseidon2.inputs[0] <== poseidon1.out;
-    poseidon2.inputs[1] <== in[2]; //datahash
-    out[1] <== in[2]; //datahash
+    poseidon2.inputs[1] <== in[2]; //fullhash
+    out[1] <== in[2]; //fullhash
     out[2] <== poseidon2.out; //allhash
 }
 
