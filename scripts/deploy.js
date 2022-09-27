@@ -4,23 +4,24 @@ const { BigNumber, utils } = require('ethers')
 
 
 
-// polygon mainnet
-
+// polygon mainnet 2022-9-27
+// EthereumPasswordService deployed: 0x555DE00394cEBb92f49e9DC4399372c81F5360e4
+// SafeboxFactory deployed: 0xEF6b7A04BF73f8674b5B7BcDd460778862dd5b90
 
 
 async function main() {
 	const accounts = await hre.ethers.getSigners()
 	const feeTo = '0x50D8aD8e7CC0C9c2236Aac2D2c5141C164168da3'
 
-	const PasswordService = await ethers.getContractFactory('PasswordService')
-	const passwordService = await PasswordService.deploy()
-	await passwordService.deployed()
-	console.log('passwordService deployed:', passwordService.address)
+	const EthereumPasswordService = await ethers.getContractFactory('EthereumPasswordService')
+	const eps = await EthereumPasswordService.deploy()
+	await eps.deployed()
+	console.log('EthereumPasswordService deployed:', eps.address)
 
 	const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
-	const safeboxFactory = await SafeboxFactory.deploy(passwordService.address)
+	const safeboxFactory = await SafeboxFactory.deploy(eps.address)
 	await safeboxFactory.deployed()
-	console.log('safeboxFactory deployed:', safeboxFactory.address)
+	console.log('SafeboxFactory deployed:', safeboxFactory.address)
 
 	console.log('done')
 }
