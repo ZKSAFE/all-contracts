@@ -190,8 +190,7 @@ describe('Safebox-withdraw', function () {
         let datahash = s(b(newOwner))
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
-        //need fee
-        await safebox.transferOwnership(p.proof, newOwner, p.expiration, p.allhash, {value: fee})
+        await safebox.transferOwnership(p.proof, newOwner, p.expiration, p.allhash)
         console.log('transferOwnership done')
 
         await print()

@@ -212,7 +212,7 @@ contract Safebox is Context {
                 break;
             }
         }
-        require(isGuardian, "transferOwnership2: you're not Guardian");
+        require(isGuardian, "transferOwnership2: you're not the Guardian");
 
         if (prepareOwner == newOwner) {
             uint insertIndex = 0;
@@ -231,6 +231,7 @@ contract Safebox is Context {
             if (insertIndex == needGuardiansNum - 1) {
                 //fire!
                 _doTransferOwnership(newOwner);
+                doneGuardians = new address[](needGuardiansNum); //clear doneGuardians
             } else {
                 doneGuardians[insertIndex] = _msgSender();
             }

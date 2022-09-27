@@ -2,7 +2,7 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require("snarkjs")
 const fs = require("fs")
 
-describe('Safebox-recovery', function () {
+describe('EPS-test', function () {
     let accounts
     let provider
     let eps
@@ -50,11 +50,7 @@ describe('Safebox-recovery', function () {
         eps = await EthereumPasswordService.deploy()
         await eps.deployed()
         console.log('eps deployed:', eps.address)
-        await eps.transferOwnership(accounts[1].address)
-        console.log('eps transferOwnership(fee) to', await eps.owner())
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
-        
+
 
         const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
         safeboxFactory = await SafeboxFactory.deploy(eps.address)
@@ -83,7 +79,7 @@ describe('Safebox-recovery', function () {
     })
 
 
-    it('initPassword', async function () {
+    it('initPassword_0', async function () {
         let pwd = 'abc123'
         let nonce = '1'
         let datahash = '0'
@@ -101,54 +97,48 @@ describe('Safebox-recovery', function () {
     })
 
 
-    it('createSafebox', async function () {
-        let tx = await safeboxFactory.createSafebox()
-        console.log('submited')
+    it('initPassword_1', async function () {
+        let pwd = 'abc123456'
+        let nonce = '1'
+        let datahash = '0'
+        let p = await getProof(pwd, accounts[1].address, nonce, datahash)
 
-        let receipt = await tx.wait()
-        console.log('submited done')
+        fee = await eps.fee()
+        console.log('eps fee(Ether)', utils.formatEther(fee))
 
-        console.log('createSafebox, address:', b(receipt.logs[1].topics[2]).toHexString())
+        //need fee
+        let gasLimit = await eps.connect(accounts[1]).estimateGas.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee})
+        await eps.connect(accounts[1]).resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee, gasLimit})
+        console.log('initPassword done')
 
-        let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[0].address)
-        console.log('getSafeboxAddr:', safeboxAddr)
+        await print()
     })
 
 
-    it('setSocialRecover', async function () {
+    it('transferOwnership', async function () {
         let pwd = 'abc123'
         let nonce = s(await eps.nonceOf(accounts[0].address))
-        let needGuardiansNum = '3'
-        let guardians = [accounts[0].address, accounts[1].address, accounts[2].address]
-        let datahash = utils.solidityKeccak256(['address[]', 'uint256'], [guardians, needGuardiansNum])
-        let p = await getProof(pwd, accounts[0].address, nonce, datahash)
+        let newOwner = accounts[1].address
+        newOwner = s(b(newOwner))
+        let p = await getProof(pwd, accounts[0].address, nonce, newOwner)
 
-        await safebox.setSocialRecover(p.proof, guardians, needGuardiansNum, p.expiration, p.allhash)
-        console.log('setSocialRecover done')
-
-        let recover = await safebox.getSocialRecover()
-        console.log('recover', recover)
-
-        await print()
+        await eps.transferOwnership(p.proof, newOwner, p.expiration, p.allhash)
+        console.log('eps transferOwnership(fee) to', await eps.owner())
+        fee = await eps.fee()
+        console.log('eps fee(Ether)', utils.formatEther(fee))
     })
 
 
-    it('transferOwnership2', async function () {
-        await safebox.connect(accounts[2]).transferOwnership2(accounts[4].address)
-        console.log('transferOwnership2 done 0')
+    it('setFee', async function () {
+        let pwd = 'abc123456'
+        let nonce = s(await eps.nonceOf(accounts[1].address))
+        let newFee = s(utils.parseEther('0.2'))
+        let p = await getProof(pwd, accounts[1].address, nonce, newFee)
 
-        await safebox.connect(accounts[1]).transferOwnership2(accounts[4].address)
-        console.log('transferOwnership2 done 1')
-
-        await safebox.connect(accounts[0]).transferOwnership2(accounts[4].address)
-        console.log('transferOwnership2 done 2')
-
-        let recover = await safebox.getSocialRecover()
-        console.log('recover', recover)
-
-        await print()
+        await eps.connect(accounts[1]).setFee(p.proof, newFee, p.expiration, p.allhash)
+        fee = await eps.fee()
+        console.log('eps fee(Ether)', utils.formatEther(fee))
     })
-
 
 
     //util
@@ -196,7 +186,7 @@ describe('Safebox-recovery', function () {
     async function print() {
         console.log('')
         for (let i=0; i<=4; i++) {
-            let safeboxAddr = await safeboxFactory.userToSafebox(accounts[i].address)
+            let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[i].address)
             console.log('accounts[' + i + ']',
                 'safeboxAddr', safeboxAddr,
                 'usdt:', d(await usdt.balanceOf(accounts[i].address), 18), 

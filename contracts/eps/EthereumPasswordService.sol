@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 import "./verifier.sol";
 
-contract EthereumPasswordService is Ownable {
+contract EthereumPasswordService is Context {
     Verifier verifier = new Verifier();
 
     event SetPassword(address indexed user, uint indexed pwdhash);
 
     event Verified(address indexed user, uint indexed nonce);
+
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     mapping(address => uint) public pwdhashOf;
 
@@ -17,9 +22,58 @@ contract EthereumPasswordService is Ownable {
 
     uint public fee = 0.1 ether;
 
-    constructor() {}
+    address private _owner;
 
-    function setFee(uint newFee) public onlyOwner {
+    constructor() {
+        _owner = _msgSender();
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        _checkOwner();
+        _;
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if the sender is not the owner.
+     */
+    function _checkOwner() internal view virtual {
+        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+    }
+
+    function transferOwnership(
+        uint[8] memory proof,
+        uint newOwner,
+        uint expiration,
+        uint allhash
+    ) public onlyOwner {
+        require(newOwner != 0, "Ownable: new owner is the zero address");
+
+        verify(owner(), proof, newOwner, expiration, allhash);
+
+        address newOwnerAddr = address(uint160(newOwner));
+        address oldOwner = _owner;
+        _owner = newOwnerAddr;
+
+        emit OwnershipTransferred(oldOwner, newOwnerAddr);
+    }
+
+    function setFee(
+        uint[8] memory proof,
+        uint newFee,
+        uint expiration,
+        uint allhash
+    ) public onlyOwner {
+        verify(owner(), proof, newFee, expiration, allhash);
         fee = newFee;
     }
 
