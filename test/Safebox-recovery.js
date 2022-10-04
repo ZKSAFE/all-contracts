@@ -50,8 +50,6 @@ describe('Safebox-recovery', function () {
         eps = await EthereumPasswordService.deploy()
         await eps.deployed()
         console.log('eps deployed:', eps.address)
-        await eps.transferOwnership(accounts[1].address)
-        console.log('eps transferOwnership(fee) to', await eps.owner())
         fee = await eps.fee()
         console.log('eps fee(Ether)', utils.formatEther(fee))
         

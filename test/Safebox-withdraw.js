@@ -50,8 +50,6 @@ describe('Safebox-withdraw', function () {
         eps = await EthereumPasswordService.deploy()
         await eps.deployed()
         console.log('eps deployed:', eps.address)
-        await eps.transferOwnership(accounts[1].address)
-        console.log('eps transferOwnership(fee) to', await eps.owner())
         fee = await eps.fee()
         console.log('eps fee(Ether)', utils.formatEther(fee))
         
@@ -135,7 +133,7 @@ describe('Safebox-withdraw', function () {
         let pwd = 'abc123'
         let nonce = s(await eps.nonceOf(accounts[0].address))
         let amount = s(m(1, 18))
-        let datahash = utils.solidityKeccak256(['uint256'], [amount]);
+        let datahash = utils.solidityKeccak256(['uint256'], [amount])
         datahash = s(b(datahash))
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
