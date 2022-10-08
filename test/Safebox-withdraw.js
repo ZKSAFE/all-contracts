@@ -74,6 +74,9 @@ describe('Safebox-withdraw', function () {
         await nft.transferFrom(accounts[0].address, safebox.address, b('9988'))
         console.log('transfer ERC721 done')
 
+        let gasLimit = await accounts[0].estimateGas({to: safebox.address, value: m(2, 18)})
+        console.log('deposit ETH gasLimit', gasLimit)
+
         await accounts[0].sendTransaction({to: safebox.address, value: m(2, 18)})
         console.log('transfer ETH done')
 
