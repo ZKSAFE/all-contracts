@@ -50,14 +50,14 @@ describe('Safebox-recovery', function () {
         eps = await EthereumPasswordService.deploy()
         await eps.deployed()
         console.log('eps deployed:', eps.address)
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
         
-
+        
         const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
         safeboxFactory = await SafeboxFactory.deploy(eps.address)
         await safeboxFactory.deployed()
         console.log('safeboxFactory deployed:', safeboxFactory.address)
+        fee = await safeboxFactory.fee()
+        console.log('safeboxFactory fee(Ether)', utils.formatEther(fee))
 
 
         let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[0].address)
@@ -87,12 +87,7 @@ describe('Safebox-recovery', function () {
         let datahash = '0'
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
-
-        //need fee
-        let gasLimit = await eps.estimateGas.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee})
-        await eps.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee, gasLimit})
+        await eps.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
         console.log('initPassword done')
 
         await print()

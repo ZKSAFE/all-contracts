@@ -50,14 +50,14 @@ describe('Safebox-withdraw', function () {
         eps = await EthereumPasswordService.deploy()
         await eps.deployed()
         console.log('eps deployed:', eps.address)
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
         
-
+        
         const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
         safeboxFactory = await SafeboxFactory.deploy(eps.address)
         await safeboxFactory.deployed()
         console.log('safeboxFactory deployed:', safeboxFactory.address)
+        fee = await safeboxFactory.fee()
+        console.log('safeboxFactory fee(Ether)', utils.formatEther(fee))
 
 
         let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[0].address)
@@ -90,12 +90,7 @@ describe('Safebox-withdraw', function () {
         let datahash = '0'
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
-
-        //need fee
-        let gasLimit = await eps.estimateGas.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee})
-        await eps.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee, gasLimit})
+        await eps.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
         console.log('initPassword done')
 
         await print()
@@ -136,8 +131,7 @@ describe('Safebox-withdraw', function () {
         let pwd = 'abc123'
         let nonce = s(await eps.nonceOf(accounts[0].address))
         let amount = s(m(1, 18))
-        let datahash = utils.solidityKeccak256(['uint256'], [amount])
-        datahash = s(b(datahash))
+        let datahash = amount
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
         await safebox.withdrawETH(p.proof, amount, p.expiration, p.allhash)
@@ -156,11 +150,7 @@ describe('Safebox-withdraw', function () {
         let newpwd = '123123'
         let newZkp = await getProof(newpwd, accounts[0].address, s(nonce.add(1)), datahash)
 
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
-
-        //need fee
-        await eps.resetPassword(oldZkp.proof, oldZkp.expiration, oldZkp.allhash, newZkp.proof, newZkp.pwdhash, newZkp.expiration, newZkp.allhash, {value: fee})
+        await eps.resetPassword(oldZkp.proof, oldZkp.expiration, oldZkp.allhash, newZkp.proof, newZkp.pwdhash, newZkp.expiration, newZkp.allhash)
         console.log('resetPassword done')
 
         await print()

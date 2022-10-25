@@ -10,13 +10,89 @@ contract SafeboxFactory is Context {
 
     event SafeboxOwner(address indexed user, address indexed safebox);
 
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
+
     mapping(address => address) public userToSafebox;
 
-    mapping(address => uint) nonceOf;
+    mapping(address => uint) public nonceOf;
+
+    address public feeTo;
+
+    uint public fee;
+
+    address private _owner;
 
     constructor(address epsAddr) {
         eps = EthereumPasswordService(epsAddr);
+        _transferOwnership(_msgSender());
     }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        _checkOwner();
+        _;
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if the sender is not the owner.
+     */
+    function _checkOwner() internal view virtual {
+        require(owner() == _msgSender(), "SafeboxFactory: caller is not the owner");
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function _transferOwnership(address newOwner) internal virtual {
+        address oldOwner = _owner;
+        _owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
+
+    function transferOwnership(
+        uint[8] memory proof,
+        address newOwner,
+        uint expiration,
+        uint allhash
+    ) external payable onlyOwner {
+        require(
+            newOwner != address(0),
+            "SafeboxFactory: new owner is the zero address"
+        );
+
+        uint datahash = uint(uint160(newOwner));
+        eps.verify(owner(), proof, datahash, expiration, allhash);
+
+        _transferOwnership(newOwner);
+    }
+
+    function setFee(
+        uint[8] memory proof,
+        uint newFee,
+        uint expiration,
+        uint allhash
+    ) external payable onlyOwner {
+        eps.verify(owner(), proof, newFee, expiration, allhash);
+
+        fee = newFee;
+    }
+
+    ///////////////////////////////////
+    // Safebox
+    ///////////////////////////////////
 
     function createSafebox() public returns (address) {
         require(
@@ -79,11 +155,11 @@ contract SafeboxFactory is Context {
         );
 
         require(
-            msg.value >= eps.fee(),
+            msg.value >= fee,
             "SafeboxFactory::changeSafeboxOwner: fee not enough"
         );
 
-        payable(eps.owner()).transfer(msg.value);
+        payable(feeTo).transfer(msg.value);
 
         userToSafebox[fromOwner] = address(0);
         userToSafebox[newOwner] = safeboxAddr;

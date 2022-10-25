@@ -2,16 +2,18 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require("snarkjs")
 const fs = require("fs")
 
-describe('EPS-test', function () {
+/**
+ * withdraw 10000 times, can the EPS still work well?
+ */
+describe('Safebox-10k-withdraw', function () {
     let accounts
     let provider
     let eps
     let safeboxFactory
     let safebox
     let usdt
-    let busd
-    let nft
     let fee
+    let pwd = 'abc123'
 
     before(async function () {
         accounts = await ethers.getSigners()
@@ -23,39 +25,22 @@ describe('EPS-test', function () {
         usdt = await MockERC20.deploy('MockUSDT', 'USDT')
         await usdt.deployed()
         console.log('usdt deployed:', usdt.address)
-		await usdt.mint(accounts[0].address, m(1000, 18))
+		await usdt.mint(accounts[0].address, m(20000, 18))
         console.log('usdt mint to accounts[0]', d(await usdt.balanceOf(accounts[0].address), 18))
-		await usdt.mint(accounts[1].address, m(1000, 18))
-        console.log('usdt mint to accounts[1]', d(await usdt.balanceOf(accounts[1].address), 18))
 
 
-        busd = await MockERC20.deploy('MockBUSD', 'BUSD')
-        await busd.deployed()
-        console.log('busd deployed:', busd.address)
-		await busd.mint(accounts[0].address, m(1000, 18))
-        console.log('busd mint to accounts[0]', d(await busd.balanceOf(accounts[0].address), 18))
-		await busd.mint(accounts[1].address, m(1000, 18))
-        console.log('busd mint to accounts[1]', d(await busd.balanceOf(accounts[1].address), 18))
-
-
-        const MockERC721 = await ethers.getContractFactory('MockERC721')
-        nft = await MockERC721.deploy('MockNFT', 'NFT')
-        await nft.deployed()
-        console.log('nft deployed:', nft.address)
-		await nft.mint(accounts[0].address, b('9988'))
-        console.log('busd mint to accounts[0]', await nft.ownerOf(b('9988')))
-
-        
         const EthereumPasswordService = await ethers.getContractFactory('EthereumPasswordService')
         eps = await EthereumPasswordService.deploy()
         await eps.deployed()
         console.log('eps deployed:', eps.address)
-
-
+        
+        
         const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
         safeboxFactory = await SafeboxFactory.deploy(eps.address)
         await safeboxFactory.deployed()
         console.log('safeboxFactory deployed:', safeboxFactory.address)
+        fee = await safeboxFactory.fee()
+        console.log('safeboxFactory fee(Ether)', utils.formatEther(fee))
 
 
         let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[0].address)
@@ -66,79 +51,93 @@ describe('EPS-test', function () {
 
 
     it('deposit', async function () {
-        await usdt.transfer(safebox.address, m(100, 18))
+        await usdt.transfer(safebox.address, m(20000, 18))
         console.log('transfer ERC20 done')
-
-        await nft.transferFrom(accounts[0].address, safebox.address, b('9988'))
-        console.log('transfer ERC721 done')
-
-        await accounts[0].sendTransaction({to: safebox.address, value: m(2, 18)})
-        console.log('transfer ETH done')
-
-        await print()
     })
 
 
-    it('initPassword_0', async function () {
-        let pwd = 'abc123'
+    it('initPassword', async function () {
         let nonce = '1'
         let datahash = '0'
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
-
-        //need fee
-        let gasLimit = await eps.estimateGas.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee})
-        await eps.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee, gasLimit})
+        await eps.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
         console.log('initPassword done')
+    })
+
+
+    it('createSafebox', async function () {
+        let tx = await safeboxFactory.createSafebox()
+        console.log('submited')
+
+        let receipt = await tx.wait()
+        console.log('submited done')
+
+        console.log('createSafebox, address:', b(receipt.logs[1].topics[2]).toHexString())
+
+        let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[0].address)
+        console.log('getSafeboxAddr:', safeboxAddr)
+    })
+
+
+    it('withdrawERC20-10K', async function () {
+        this.timeout(0)
+        await print()
+
+        let nonce = await eps.nonceOf(accounts[0].address)
+        let tokenAddr = usdt.address
+        let amount = s(m(1, 18))
+        let datahash = utils.solidityKeccak256(['address', 'uint256'], [tokenAddr, amount])
+        datahash = s(b(datahash))
+
+        for (let i=0; i<10; i++) {
+            let p = await getProof(pwd, accounts[0].address, s(nonce), datahash)
+            
+            await safebox.withdrawERC20(p.proof, tokenAddr, amount, p.expiration, p.allhash)
+            console.log('withdrawERC20 done', i)
+
+            nonce = nonce.add(1)
+        }
 
         await print()
     })
 
 
-    it('initPassword_1', async function () {
-        let pwd = 'abc123456'
-        let nonce = '1'
-        let datahash = '0'
-        let p = await getProof(pwd, accounts[1].address, nonce, datahash)
+    it('resetPassword-10K', async function () {
+        this.timeout(0)
+        let nonce = await eps.nonceOf(accounts[0].address)
 
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
+        for (let i=0; i<10; i++) {
+            let datahash = '0'
+            let oldZkp = await getProof(pwd, accounts[0].address, s(nonce), datahash)
+    
+            pwd = i.toString()
+            let newZkp = await getProof(pwd, accounts[0].address, s(nonce.add(1)), datahash)
 
-        //need fee
-        let gasLimit = await eps.connect(accounts[1]).estimateGas.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee})
-        await eps.connect(accounts[1]).resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash, {value: fee, gasLimit})
-        console.log('initPassword done')
+            await eps.resetPassword(oldZkp.proof, oldZkp.expiration, oldZkp.allhash, newZkp.proof, newZkp.pwdhash, newZkp.expiration, newZkp.allhash)
+            console.log('resetPassword done', i, pwd)
+
+            nonce = nonce.add(2)
+        }
+    })
+
+
+    it('withdrawERC20', async function () {
+        let nonce = await eps.nonceOf(accounts[0].address)
+        let tokenAddr = usdt.address
+        let amount = s(m(1, 18))
+        let datahash = utils.solidityKeccak256(['address', 'uint256'], [tokenAddr, amount])
+        datahash = s(b(datahash))
+
+        let p = await getProof(pwd, accounts[0].address, s(nonce), datahash)
+        
+        await safebox.withdrawERC20(p.proof, tokenAddr, amount, p.expiration, p.allhash)
+        console.log('withdrawERC20 done')
 
         await print()
     })
 
 
-    it('transferOwnership', async function () {
-        let pwd = 'abc123'
-        let nonce = s(await eps.nonceOf(accounts[0].address))
-        let newOwner = accounts[1].address
-        newOwner = s(b(newOwner))
-        let p = await getProof(pwd, accounts[0].address, nonce, newOwner)
-
-        await eps.transferOwnership(p.proof, newOwner, p.expiration, p.allhash)
-        console.log('eps transferOwnership(fee) to', await eps.owner())
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
-    })
-
-
-    it('setFee', async function () {
-        let pwd = 'abc123456'
-        let nonce = s(await eps.nonceOf(accounts[1].address))
-        let newFee = s(utils.parseEther('0.2'))
-        let p = await getProof(pwd, accounts[1].address, nonce, newFee)
-
-        await eps.connect(accounts[1]).setFee(p.proof, newFee, p.expiration, p.allhash)
-        fee = await eps.fee()
-        console.log('eps fee(Ether)', utils.formatEther(fee))
-    })
 
 
     //util
@@ -155,13 +154,13 @@ describe('EPS-test', function () {
         // console.log(JSON.stringify(data))
 
         const vKey = JSON.parse(fs.readFileSync("./zk/main9/verification_key.json"))
-        const res = await snarkjs.groth16.verify(vKey, data.publicSignals, data.proof)
+        // const res = await snarkjs.groth16.verify(vKey, data.publicSignals, data.proof)
 
-        if (res === true) {
-            console.log("Verification OK")
+        // if (res === true) {
+        //     console.log("Verification OK")
 
             let pwdhash = data.publicSignals[0]
-            let fullhash = data.publicSignals[1]
+            // let fullhash = data.publicSignals[1]
             let allhash = data.publicSignals[2]
 
             let proof = [
@@ -177,15 +176,15 @@ describe('EPS-test', function () {
 
             return {proof, pwdhash, address, expiration, chainId, nonce, datahash, fullhash, allhash}
 
-        } else {
-            console.log("Invalid proof")
-        }
+        // } else {
+        //     console.log("Invalid proof")
+        // }
     }
 
 
     async function print() {
         console.log('')
-        for (let i=0; i<=4; i++) {
+        for (let i=0; i<=1; i++) {
             let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[i].address)
             console.log('accounts[' + i + ']',
                 'safeboxAddr', safeboxAddr,
@@ -195,7 +194,6 @@ describe('EPS-test', function () {
                 'safebox eth:', d(await provider.getBalance(safeboxAddr), 18)
 			)
 		}
-        console.log('nft#9988 owner:', await nft.ownerOf(b('9988')))
         console.log('')
     }
 

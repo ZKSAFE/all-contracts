@@ -53,7 +53,7 @@ contract Safebox is Context {
      * @dev Throws if the sender is not the owner.
      */
     function _checkOwner() internal view virtual {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        require(owner() == _msgSender(), "Safebox: caller is not the owner");
     }
 
     /**
@@ -82,7 +82,7 @@ contract Safebox is Context {
     ) external payable onlyOwner {
         require(
             newOwner != address(0),
-            "Ownable: new owner is the zero address"
+            "Safebox: new owner is the zero address"
         );
 
         uint datahash = uint(uint160(newOwner));
@@ -92,7 +92,7 @@ contract Safebox is Context {
     }
 
     function _doTransferOwnership(address newOwner) private {
-        SafeboxFactory(factory).changeSafeboxOwner{value: eps.fee()}(
+        SafeboxFactory(factory).changeSafeboxOwner{value: SafeboxFactory(factory).fee()}(
             owner(),
             newOwner
         );
@@ -100,14 +100,17 @@ contract Safebox is Context {
         _transferOwnership(newOwner);
     }
 
+    ///////////////////////////////////
+    // withdraw
+    ///////////////////////////////////
+
     function withdrawETH(
         uint[8] memory proof,
         uint amount,
         uint expiration,
         uint allhash
     ) external onlyOwner {
-        uint datahash = uint(keccak256(abi.encodePacked(amount)));
-        eps.verify(owner(), proof, datahash, expiration, allhash);
+        eps.verify(owner(), proof, amount, expiration, allhash);
 
         payable(owner()).transfer(amount);
 
