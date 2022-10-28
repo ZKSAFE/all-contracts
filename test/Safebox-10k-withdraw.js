@@ -3,12 +3,12 @@ const snarkjs = require("snarkjs")
 const fs = require("fs")
 
 /**
- * withdraw 10000 times, can the EPS still work well?
+ * withdraw 10000 times, can the zkPass still work well?
  */
 describe('Safebox-10k-withdraw', function () {
     let accounts
     let provider
-    let eps
+    let zkPass
     let safeboxFactory
     let safebox
     let usdt
@@ -29,14 +29,14 @@ describe('Safebox-10k-withdraw', function () {
         console.log('usdt mint to accounts[0]', d(await usdt.balanceOf(accounts[0].address), 18))
 
 
-        const EthereumPasswordService = await ethers.getContractFactory('EthereumPasswordService')
-        eps = await EthereumPasswordService.deploy()
-        await eps.deployed()
-        console.log('eps deployed:', eps.address)
+        const ZKPass = await ethers.getContractFactory('ZKPass')
+        zkPass = await ZKPass.deploy()
+        await zkPass.deployed()
+        console.log('zkPass deployed:', zkPass.address)
         
         
         const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
-        safeboxFactory = await SafeboxFactory.deploy(eps.address)
+        safeboxFactory = await SafeboxFactory.deploy(zkPass.address)
         await safeboxFactory.deployed()
         console.log('safeboxFactory deployed:', safeboxFactory.address)
         fee = await safeboxFactory.fee()
@@ -61,7 +61,7 @@ describe('Safebox-10k-withdraw', function () {
         let datahash = '0'
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
-        await eps.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
+        await zkPass.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
         console.log('initPassword done')
     })
 
@@ -84,7 +84,7 @@ describe('Safebox-10k-withdraw', function () {
         this.timeout(0)
         await print()
 
-        let nonce = await eps.nonceOf(accounts[0].address)
+        let nonce = await zkPass.nonceOf(accounts[0].address)
         let tokenAddr = usdt.address
         let amount = s(m(1, 18))
         let datahash = utils.solidityKeccak256(['address', 'uint256'], [tokenAddr, amount])
@@ -105,7 +105,7 @@ describe('Safebox-10k-withdraw', function () {
 
     it('resetPassword-10K', async function () {
         this.timeout(0)
-        let nonce = await eps.nonceOf(accounts[0].address)
+        let nonce = await zkPass.nonceOf(accounts[0].address)
 
         for (let i=0; i<10; i++) {
             let datahash = '0'
@@ -114,7 +114,7 @@ describe('Safebox-10k-withdraw', function () {
             pwd = i.toString()
             let newZkp = await getProof(pwd, accounts[0].address, s(nonce.add(1)), datahash)
 
-            await eps.resetPassword(oldZkp.proof, oldZkp.expiration, oldZkp.allhash, newZkp.proof, newZkp.pwdhash, newZkp.expiration, newZkp.allhash)
+            await zkPass.resetPassword(oldZkp.proof, oldZkp.expiration, oldZkp.allhash, newZkp.proof, newZkp.pwdhash, newZkp.expiration, newZkp.allhash)
             console.log('resetPassword done', i, pwd)
 
             nonce = nonce.add(2)
@@ -123,7 +123,7 @@ describe('Safebox-10k-withdraw', function () {
 
 
     it('withdrawERC20', async function () {
-        let nonce = await eps.nonceOf(accounts[0].address)
+        let nonce = await zkPass.nonceOf(accounts[0].address)
         let tokenAddr = usdt.address
         let amount = s(m(1, 18))
         let datahash = utils.solidityKeccak256(['address', 'uint256'], [tokenAddr, amount])

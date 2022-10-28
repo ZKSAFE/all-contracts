@@ -5,13 +5,13 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "../eps/EthereumPasswordService.sol";
+import "../zkPass/ZKPass.sol";
 import "./SafeboxFactory.sol";
 
 contract Safebox is Context {
     using SafeERC20 for IERC20;
 
-    EthereumPasswordService public eps;
+    ZKPass public zkPass;
 
     event WithdrawERC20(address indexed tokenAddr, uint amount);
 
@@ -70,7 +70,7 @@ contract Safebox is Context {
         require(!isInit, "function forbidden");
         isInit = true;
         factory = _msgSender();
-        eps = SafeboxFactory(factory).eps();
+        zkPass = SafeboxFactory(factory).zkPass();
         _transferOwnership(newOwner);
     }
 
@@ -86,7 +86,7 @@ contract Safebox is Context {
         );
 
         uint datahash = uint(uint160(newOwner));
-        eps.verify(owner(), proof, datahash, expiration, allhash);
+        zkPass.verify(owner(), proof, datahash, expiration, allhash);
 
         _doTransferOwnership(newOwner);
     }
@@ -110,7 +110,7 @@ contract Safebox is Context {
         uint expiration,
         uint allhash
     ) external onlyOwner {
-        eps.verify(owner(), proof, amount, expiration, allhash);
+        zkPass.verify(owner(), proof, amount, expiration, allhash);
 
         payable(owner()).transfer(amount);
 
@@ -125,7 +125,7 @@ contract Safebox is Context {
         uint allhash
     ) external onlyOwner {
         uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, amount)));
-        eps.verify(owner(), proof, datahash, expiration, allhash);
+        zkPass.verify(owner(), proof, datahash, expiration, allhash);
 
         IERC20(tokenAddr).safeTransfer(owner(), amount);
 
@@ -140,7 +140,7 @@ contract Safebox is Context {
         uint allhash
     ) external onlyOwner {
         uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, tokenId)));
-        eps.verify(owner(), proof, datahash, expiration, allhash);
+        zkPass.verify(owner(), proof, datahash, expiration, allhash);
 
         IERC721(tokenAddr).transferFrom(address(this), owner(), tokenId);
 
@@ -192,7 +192,7 @@ contract Safebox is Context {
             keccak256(abi.encodePacked(_guardians, _needGuardiansNum))
         );
 
-        eps.verify(owner(), proof, datahash, expiration, allhash);
+        zkPass.verify(owner(), proof, datahash, expiration, allhash);
 
         guardians = _guardians;
         needGuardiansNum = _needGuardiansNum;

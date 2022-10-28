@@ -48,12 +48,14 @@ console.log('generate verification_key.json done')
 execSync('snarkjs zkey export solidityverifier circuit_final.zkey verifier.sol')
 console.log('generate verifier.sol done')
 
+execSync('rm -f challenge_0003 challenge_phase2_0003 circuit_0000.zkey circuit_0001.zkey circuit_0002.zkey circuit_0003.zkey circuit.r1cs circuit.sym pot12_0000.ptau pot12_0001.ptau pot12_0002.ptau pot12_0003.ptau pot12_beacon.ptau pot12_final.ptau response_0003 response_phase2_0003 ./circuit_js/generate_witness.js ./circuit_js/witness_calculator.js')
+console.log('files cleared')
+
 console.log('cmd end')
 
 
 function rand() {
     let ret = Math.random().toString(16).substring(2, 12)
-    // let ret  = '123abc'
     console.log('rand', ret)
     return ret
 }

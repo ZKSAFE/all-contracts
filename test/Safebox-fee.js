@@ -2,10 +2,10 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require("snarkjs")
 const fs = require("fs")
 
-describe('EPS-test', function () {
+describe('zkPass-test', function () {
     let accounts
     let provider
-    let eps
+    let zkPass
     let safeboxFactory
     let safebox
     let usdt
@@ -19,14 +19,14 @@ describe('EPS-test', function () {
     })
 
     it('deploy', async function () {
-        const EthereumPasswordService = await ethers.getContractFactory('EthereumPasswordService')
-        eps = await EthereumPasswordService.deploy()
-        await eps.deployed()
-        console.log('eps deployed:', eps.address)
+        const ZKPass = await ethers.getContractFactory('ZKPass')
+        zkPass = await ZKPass.deploy()
+        await zkPass.deployed()
+        console.log('zkPass deployed:', zkPass.address)
 
 
         const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
-        safeboxFactory = await SafeboxFactory.deploy(eps.address)
+        safeboxFactory = await SafeboxFactory.deploy(zkPass.address)
         await safeboxFactory.deployed()
         console.log('safeboxFactory deployed:', safeboxFactory.address)
     })
@@ -38,7 +38,7 @@ describe('EPS-test', function () {
         let datahash = '0'
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
-        await eps.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
+        await zkPass.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
         console.log('initPassword done')
     })
 
@@ -49,14 +49,14 @@ describe('EPS-test', function () {
         let datahash = '0'
         let p = await getProof(pwd, accounts[1].address, nonce, datahash)
 
-        await eps.connect(accounts[1]).resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
+        await zkPass.connect(accounts[1]).resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
         console.log('initPassword done')
     })
 
 
     it('transferOwnership', async function () {
         let pwd = 'abc123'
-        let nonce = s(await eps.nonceOf(accounts[0].address))
+        let nonce = s(await zkPass.nonceOf(accounts[0].address))
         let newOwner = accounts[1].address
         let newOwner_uint = s(b(newOwner))
         let p = await getProof(pwd, accounts[0].address, nonce, newOwner_uint)
@@ -68,7 +68,7 @@ describe('EPS-test', function () {
 
     it('setFee', async function () {
         let pwd = 'abc123456'
-        let nonce = s(await eps.nonceOf(accounts[1].address))
+        let nonce = s(await zkPass.nonceOf(accounts[1].address))
         let newFee = s(utils.parseEther('0.2'))
         let p = await getProof(pwd, accounts[1].address, nonce, newFee)
 

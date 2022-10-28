@@ -5,7 +5,7 @@ const fs = require("fs")
 describe('Safebox-withdraw', function () {
     let accounts
     let provider
-    let eps
+    let zkPass
     let safeboxFactory
     let safebox
     let usdt
@@ -46,14 +46,14 @@ describe('Safebox-withdraw', function () {
         console.log('busd mint to accounts[0]', await nft.ownerOf(b('9988')))
 
         
-        const EthereumPasswordService = await ethers.getContractFactory('EthereumPasswordService')
-        eps = await EthereumPasswordService.deploy()
-        await eps.deployed()
-        console.log('eps deployed:', eps.address)
+        const ZKPass = await ethers.getContractFactory('ZKPass')
+        zkPass = await ZKPass.deploy()
+        await zkPass.deployed()
+        console.log('zkPass deployed:', zkPass.address)
         
         
         const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
-        safeboxFactory = await SafeboxFactory.deploy(eps.address)
+        safeboxFactory = await SafeboxFactory.deploy(zkPass.address)
         await safeboxFactory.deployed()
         console.log('safeboxFactory deployed:', safeboxFactory.address)
         fee = await safeboxFactory.fee()
@@ -90,7 +90,7 @@ describe('Safebox-withdraw', function () {
         let datahash = '0'
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
-        await eps.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
+        await zkPass.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
         console.log('initPassword done')
 
         await print()
@@ -113,7 +113,7 @@ describe('Safebox-withdraw', function () {
 
     it('withdrawERC20', async function () {
         let pwd = 'abc123'
-        let nonce = s(await eps.nonceOf(accounts[0].address))
+        let nonce = s(await zkPass.nonceOf(accounts[0].address))
         let tokenAddr = usdt.address
         let amount = s(m(40, 18))
         let datahash = utils.solidityKeccak256(['address', 'uint256'], [tokenAddr, amount])
@@ -129,7 +129,7 @@ describe('Safebox-withdraw', function () {
 
     it('withdrawETH', async function () {
         let pwd = 'abc123'
-        let nonce = s(await eps.nonceOf(accounts[0].address))
+        let nonce = s(await zkPass.nonceOf(accounts[0].address))
         let amount = s(m(1, 18))
         let datahash = amount
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
@@ -143,14 +143,14 @@ describe('Safebox-withdraw', function () {
 
     it('resetPassword', async function () {
         let oldpwd = 'abc123'
-        let nonce = await eps.nonceOf(accounts[0].address)
+        let nonce = await zkPass.nonceOf(accounts[0].address)
         let datahash = '0'
         let oldZkp = await getProof(oldpwd, accounts[0].address, s(nonce), datahash)
    
         let newpwd = '123123'
         let newZkp = await getProof(newpwd, accounts[0].address, s(nonce.add(1)), datahash)
 
-        await eps.resetPassword(oldZkp.proof, oldZkp.expiration, oldZkp.allhash, newZkp.proof, newZkp.pwdhash, newZkp.expiration, newZkp.allhash)
+        await zkPass.resetPassword(oldZkp.proof, oldZkp.expiration, oldZkp.allhash, newZkp.proof, newZkp.pwdhash, newZkp.expiration, newZkp.allhash)
         console.log('resetPassword done')
 
         await print()
@@ -159,7 +159,7 @@ describe('Safebox-withdraw', function () {
 
     it('withdrawERC721', async function () {
         let pwd = '123123'
-        let nonce = s(await eps.nonceOf(accounts[0].address))
+        let nonce = s(await zkPass.nonceOf(accounts[0].address))
         let tokenAddr = nft.address
         let tokenId = b('9988')
         let datahash = utils.solidityKeccak256(['address','uint256'], [tokenAddr, tokenId]);
@@ -176,7 +176,7 @@ describe('Safebox-withdraw', function () {
 
     it('transferOwnership', async function () {
         let pwd = '123123'
-        let nonce = s(await eps.nonceOf(accounts[0].address))
+        let nonce = s(await zkPass.nonceOf(accounts[0].address))
         let newOwner = accounts[2].address
         let datahash = s(b(newOwner))
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)

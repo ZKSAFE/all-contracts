@@ -2,11 +2,11 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Context.sol";
-import "../eps/EthereumPasswordService.sol";
+import "../zkPass/ZKPass.sol";
 import "./Safebox.sol";
 
 contract SafeboxFactory is Context {
-    EthereumPasswordService public eps;
+    ZKPass public zkPass;
 
     event SafeboxOwner(address indexed user, address indexed safebox);
 
@@ -25,8 +25,8 @@ contract SafeboxFactory is Context {
 
     address private _owner;
 
-    constructor(address epsAddr) {
-        eps = EthereumPasswordService(epsAddr);
+    constructor(address zkPassAddr) {
+        zkPass = ZKPass(zkPassAddr);
         _transferOwnership(_msgSender());
     }
 
@@ -74,7 +74,7 @@ contract SafeboxFactory is Context {
         );
 
         uint datahash = uint(uint160(newOwner));
-        eps.verify(owner(), proof, datahash, expiration, allhash);
+        zkPass.verify(owner(), proof, datahash, expiration, allhash);
 
         _transferOwnership(newOwner);
     }
@@ -85,7 +85,7 @@ contract SafeboxFactory is Context {
         uint expiration,
         uint allhash
     ) external payable onlyOwner {
-        eps.verify(owner(), proof, newFee, expiration, allhash);
+        zkPass.verify(owner(), proof, newFee, expiration, allhash);
 
         fee = newFee;
     }
