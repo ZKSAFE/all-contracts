@@ -14,12 +14,12 @@ async function main() {
 	const feeTo = '0x50D8aD8e7CC0C9c2236Aac2D2c5141C164168da3'
 
 	const ZKPass = await ethers.getContractFactory('ZKPass')
-	const eps = await ZKPass.deploy()
-	await eps.deployed()
-	console.log('ZKPass deployed:', eps.address)
+	const zkPass = await ZKPass.deploy()
+	await zkPass.deployed()
+	console.log('ZKPass deployed:', zkPass.address)
 
 	const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
-	const safeboxFactory = await SafeboxFactory.deploy(eps.address)
+	const safeboxFactory = await SafeboxFactory.deploy(zkPass.address)
 	await safeboxFactory.deployed()
 	console.log('SafeboxFactory deployed:', safeboxFactory.address)
 

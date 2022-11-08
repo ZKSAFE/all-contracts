@@ -28,6 +28,7 @@ contract SafeboxFactory is Context {
     constructor(address zkPassAddr) {
         zkPass = ZKPass(zkPassAddr);
         _transferOwnership(_msgSender());
+        feeTo = _msgSender();
     }
 
     /**
@@ -88,6 +89,18 @@ contract SafeboxFactory is Context {
         zkPass.verify(owner(), proof, newFee, expiration, allhash);
 
         fee = newFee;
+    }
+
+    function setFeeTo(
+        uint[8] memory proof,
+        address newFeeTo,
+        uint expiration,
+        uint allhash
+    ) external payable onlyOwner {
+        uint datahash = uint(uint160(newFeeTo));
+        zkPass.verify(owner(), proof, datahash, expiration, allhash);
+
+        feeTo = newFeeTo;
     }
 
     ///////////////////////////////////

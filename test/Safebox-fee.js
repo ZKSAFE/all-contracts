@@ -2,7 +2,7 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require("snarkjs")
 const fs = require("fs")
 
-describe('zkPass-test', function () {
+describe('Safebox-fee', function () {
     let accounts
     let provider
     let zkPass
@@ -80,6 +80,21 @@ describe('zkPass-test', function () {
 
         fee = await safeboxFactory.fee()
         console.log('fee', utils.formatEther(fee))
+    })
+
+    it('setFeeTo', async function () {
+        let pwd = 'abc123456'
+        let nonce = s(await zkPass.nonceOf(accounts[1].address))
+        let feeTo = accounts[2].address
+        let p = await getProof(pwd, accounts[1].address, nonce, feeTo)
+
+        console.log('feeTo', await safeboxFactory.feeTo())
+        
+        await safeboxFactory.connect(accounts[1]).setFeeTo(p.proof, feeTo, p.expiration, p.allhash)
+        console.log('setFeeTo done')
+
+        feeTo = await safeboxFactory.feeTo()
+        console.log('feeTo', feeTo)
     })
 
 

@@ -2,7 +2,7 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require("snarkjs")
 const fs = require("fs")
 
-describe('ZKPass-password', function () {
+describe('ZKPass-test', function () {
     let accounts
     let provider
     let zkPass
