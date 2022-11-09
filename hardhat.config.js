@@ -27,9 +27,8 @@ module.exports = {
       chainId: 137,
       from: process.env.ETH_ADDRESS_0,
       accounts: [
-        process.env.ETH_PK_0,
+        process.env.ZKSAFE_Coder_PK,
         process.env.ETH_PK_1,
-        process.env.ETH_PK_2,
       ]
     },
     matic_testnet: {
