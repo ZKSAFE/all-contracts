@@ -25,10 +25,9 @@ module.exports = {
       // url: 'https://matic-mainnet-full-rpc.bwarelabs.com',
       // url: 'https://matic-mainnet-archive-rpc.bwarelabs.com',
       chainId: 137,
-      from: process.env.ETH_ADDRESS_0,
       accounts: [
         process.env.ZKSAFE_Coder_PK,
-        process.env.ETH_PK_1,
+        process.env.ETH_PK_0,
       ]
     },
     matic_testnet: {

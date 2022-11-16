@@ -2,35 +2,28 @@
 <br>
 <br>
 
-
-## Ethereum Password Service
-#### The first time you have your own password.
-<a href="./docs/eps.md">./docs/eps.md</a>
+#### ZKSAFE is still in TESTING, it'll release soon
 <br>
 <br>
 
+#### Website
+https://www.zksafe.pro
+<br>
 
-## ZKSAFE
-#### If privatekey is stolen, Safebox is still safe.
-<a href="./docs/zksafe.md">./docs/zksafe.md</a>
+#### Docs
+https://docs.zksafe.pro
+<br>
+
+#### App (testing)
+https://dev-app.zksafe.pro (testing)
+<br>
+
+#### Chrome extension (testing)
+https://chrome.google.com/webstore/detail/zksafe/nehdcpkmooagohgkdchblmnfljmnbihg (testing)
 <br>
 <br>
 
+#### Hackthon & Grant
+2022 BNBChain Hackthon 1st at DAO Track <a href="https://dorahacks.io/bnb/1/top">zkPayroll</a>
 
-## 4337 Service (TBA)
-#### The EntryPoint Service, supply all ERC4337 wallets.
-<!-- <a href="./docs/4337service.md">./docs/4337service.md</a> -->
-<br>
-<br>
-
-
-## ZKSAFE Pro (TBA)
-#### The Web3OS / Web3PayPal / Web3Alipay, implements ERC4337. 
-<!-- <a href="./docs/zksafepro.md">./docs/zksafepro.md</a> -->
-<br>
-<br>
-
-
-## Hackthon & Grant
-#### 2022 BNBChain Hackthon 1st at DAO Track <a href="https://dorahacks.io/bnb/1/top">zkPayroll</a>
-#### 2022 ETHShanghai Hackathon Sponser Track Winner <a href="https://gitcoin.co/hackathon/ethshanghai/projects/?org=abridged">zkSafebox</a>
+2022 ETHShanghai Hackathon Sponser Track Winner <a href="https://gitcoin.co/hackathon/ethshanghai/projects/?org=abridged">zkSafebox</a>
