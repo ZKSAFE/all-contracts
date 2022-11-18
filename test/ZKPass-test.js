@@ -6,12 +6,6 @@ describe('ZKPass-test', function () {
     let accounts
     let provider
     let zkPass
-    let safeboxFactory
-    let safebox
-    let usdt
-    let busd
-    let nft
-    let fee
 
     before(async function () {
         accounts = await ethers.getSigners()

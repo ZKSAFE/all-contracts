@@ -11,7 +11,6 @@ describe('Safebox-withdraw', function () {
     let usdt
     let busd
     let nft
-    let fee
 
     before(async function () {
         accounts = await ethers.getSigners()
@@ -56,9 +55,7 @@ describe('Safebox-withdraw', function () {
         safeboxFactory = await SafeboxFactory.deploy(zkPass.address)
         await safeboxFactory.deployed()
         console.log('safeboxFactory deployed:', safeboxFactory.address)
-        fee = await safeboxFactory.fee()
-        console.log('safeboxFactory fee(Ether)', utils.formatEther(fee))
-
+        
 
         let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[0].address)
         console.log('safebox predictedAddress', safeboxAddr)

@@ -19,88 +19,8 @@ contract SafeboxFactory is Context {
 
     mapping(address => uint) public nonceOf;
 
-    address public feeTo;
-
-    uint public fee;
-
-    address private _owner;
-
     constructor(address zkPassAddr) {
         zkPass = ZKPass(zkPassAddr);
-        _transferOwnership(_msgSender());
-        feeTo = _msgSender();
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        _checkOwner();
-        _;
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view virtual returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if the sender is not the owner.
-     */
-    function _checkOwner() internal view virtual {
-        require(owner() == _msgSender(), "SafeboxFactory: caller is not the owner");
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Internal function without access restriction.
-     */
-    function _transferOwnership(address newOwner) internal virtual {
-        address oldOwner = _owner;
-        _owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
-    }
-
-    function transferOwnership(
-        uint[8] memory proof,
-        address newOwner,
-        uint expiration,
-        uint allhash
-    ) external payable onlyOwner {
-        require(
-            newOwner != address(0),
-            "SafeboxFactory: new owner is the zero address"
-        );
-
-        uint datahash = uint(uint160(newOwner));
-        zkPass.verify(owner(), proof, datahash, expiration, allhash);
-
-        _transferOwnership(newOwner);
-    }
-
-    function setFee(
-        uint[8] memory proof,
-        uint newFee,
-        uint expiration,
-        uint allhash
-    ) external payable onlyOwner {
-        zkPass.verify(owner(), proof, newFee, expiration, allhash);
-
-        fee = newFee;
-    }
-
-    function setFeeTo(
-        uint[8] memory proof,
-        address newFeeTo,
-        uint expiration,
-        uint allhash
-    ) external payable onlyOwner {
-        uint datahash = uint(uint160(newFeeTo));
-        zkPass.verify(owner(), proof, datahash, expiration, allhash);
-
-        feeTo = newFeeTo;
     }
 
     ///////////////////////////////////
@@ -153,10 +73,7 @@ contract SafeboxFactory is Context {
         return predictedAddr;
     }
 
-    function changeSafeboxOwner(address fromOwner, address newOwner)
-        external
-        payable
-    {
+    function changeSafeboxOwner(address fromOwner, address newOwner) external {
         address safeboxAddr = userToSafebox[fromOwner];
         require(
             safeboxAddr == _msgSender(),
@@ -166,13 +83,6 @@ contract SafeboxFactory is Context {
             userToSafebox[newOwner] == address(0),
             "SafeboxFactory::changeSafeboxOwner: newOwner's Safebox exist"
         );
-
-        require(
-            msg.value >= fee,
-            "SafeboxFactory::changeSafeboxOwner: fee not enough"
-        );
-
-        payable(feeTo).transfer(msg.value);
 
         userToSafebox[fromOwner] = address(0);
         userToSafebox[newOwner] = safeboxAddr;

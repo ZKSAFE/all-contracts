@@ -79,7 +79,7 @@ contract Safebox is Context {
         address newOwner,
         uint expiration,
         uint allhash
-    ) external payable onlyOwner {
+    ) external onlyOwner {
         require(
             newOwner != address(0),
             "Safebox: new owner is the zero address"
@@ -92,10 +92,7 @@ contract Safebox is Context {
     }
 
     function _doTransferOwnership(address newOwner) private {
-        SafeboxFactory(factory).changeSafeboxOwner{value: SafeboxFactory(factory).fee()}(
-            owner(),
-            newOwner
-        );
+        SafeboxFactory(factory).changeSafeboxOwner(owner(), newOwner);
 
         _transferOwnership(newOwner);
     }
