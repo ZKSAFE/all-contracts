@@ -10,11 +10,6 @@ contract SafeboxFactory is Context {
 
     event SafeboxOwner(address indexed user, address indexed safebox);
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
-
     mapping(address => address) public userToSafebox;
 
     mapping(address => uint) public nonceOf;

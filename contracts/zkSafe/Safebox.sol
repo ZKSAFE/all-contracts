@@ -199,7 +199,7 @@ contract Safebox is Context {
         emit SetSocialRecover(_guardians, needGuardiansNum);
     }
 
-    function transferOwnership2(address newOwner) external payable {
+    function transferOwnership2(address newOwner) external {
         require(
             newOwner != address(0),
             "transferOwnership2: newOwner can't be 0x00"
