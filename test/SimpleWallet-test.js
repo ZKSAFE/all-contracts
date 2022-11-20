@@ -117,11 +117,11 @@ describe('SimpleWallet-test', function () {
         fullhash = s(b(fullhash).div(8)) //must be 254b, not 256b
 
         let input = [stringToHex(pwd), address, fullhash]
-        let data = await snarkjs.groth16.fullProve({ in: input }, "./zk/main9/circuit_js/circuit.wasm", "./zk/main9/circuit_final.zkey")
+        let data = await snarkjs.groth16.fullProve({ in: input }, "./zk/v1/circuit_js/circuit.wasm", "./zk/v1/circuit_final.zkey")
 
         // console.log(JSON.stringify(data))
 
-        const vKey = JSON.parse(fs.readFileSync("./zk/main9/verification_key.json"))
+        const vKey = JSON.parse(fs.readFileSync("./zk/v1/verification_key.json"))
         const res = await snarkjs.groth16.verify(vKey, data.publicSignals, data.proof)
 
         if (res === true) {

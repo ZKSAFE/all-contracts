@@ -56,7 +56,7 @@ console.log('cmd end')
 
 function rand() {
     let ret = Math.random().toString(16).substring(2, 12)
-    console.log('rand', ret)
+    // console.log('rand', ret)
     return ret
 }
 
