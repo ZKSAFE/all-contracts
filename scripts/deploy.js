@@ -9,6 +9,11 @@ const { BigNumber, utils } = require('ethers')
 // ZKPass deployed: 0x72f3E7DdAe7f5B8859a230FE00f4214d582622fF
 // SafeboxFactory deployed: 0xd9403569f3447121eb78d426Bb5eFC7D10316b50
 
+// polygon mainnet 2022-11-20
+// deployer:  0xb42466f1c2B0d878ff14E76477f8AF016E5dBe26
+// ZKPass deployed: 0xCDc902C17985f5d66A857F67a2BD6f5A29cE225d
+// SafeboxFactory deployed: 0x5a93D9a81F1ee8368BaD0EEb0f653bB45bFc6329
+
 
 async function main() {
 	const accounts = await hre.ethers.getSigners()
