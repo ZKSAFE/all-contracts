@@ -2,10 +2,10 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require("snarkjs")
 const fs = require("fs")
 
-describe('SimpleWallet2-test', function () {
+describe('ZKPassWallet-test', function () {
     let accounts
     let provider
-    let simpleWallet
+    let zkPassWallet
     let zkID
     let zkPass
     let usdt
@@ -37,11 +37,11 @@ describe('SimpleWallet2-test', function () {
     })
 
 
-    it('deploy SimpleWallet', async function () {
-        const SimpleWallet = await ethers.getContractFactory('SimpleWallet2')
-        simpleWallet = await SimpleWallet.deploy(zkPass.address, zkID.address)
-        await simpleWallet.deployed()
-        console.log('simpleWallet deployed:', simpleWallet.address)
+    it('deploy ZKPassWallet', async function () {
+        const ZKPassWallet = await ethers.getContractFactory('ZKPassWallet')
+        zkPassWallet = await ZKPassWallet.deploy(zkPass.address, zkID.address)
+        await zkPassWallet.deployed()
+        console.log('zkPassWallet deployed:', zkPassWallet.address)
     })
 
 
@@ -49,15 +49,15 @@ describe('SimpleWallet2-test', function () {
         let pwd = 'abc123'
         let nonce = '1'
         let datahash = '0'
-        let p = await getProof(pwd, simpleWallet.address, nonce, datahash)
+        let p = await getProof(pwd, zkPassWallet.address, nonce, datahash)
 
-        await simpleWallet.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
+        await zkPassWallet.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
         console.log('initPassword done')
     })
 
 
     it('mint ZKID', async function () {
-        await zkID.mint(simpleWallet.address, 2022)
+        await zkID.mint(zkPassWallet.address, 2022)
         console.log('mint ZKID done')
     })
 
@@ -73,17 +73,17 @@ describe('SimpleWallet2-test', function () {
 
     it('withdraw', async function () {
         let pwd = 'abc123'
-        let nonce = s(await zkPass.nonceOf(simpleWallet.address))
+        let nonce = s(await zkPass.nonceOf(zkPassWallet.address))
         let contractAddr = usdt.address
         const ERC = await ethers.getContractFactory('MockERC20')
         let sigData = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(40, 18)])
 
         let datahash = utils.solidityKeccak256(['address', 'bytes'], [contractAddr, sigData])
         datahash = s(b(datahash))
-        let p = await getProof(pwd, simpleWallet.address, nonce, datahash)
+        let p = await getProof(pwd, zkPassWallet.address, nonce, datahash)
 
-        //any EOA wallet can call the simpleWallet, but only with the correct password can be excuted
-        await simpleWallet.connect(accounts[1]).call(p.proof, contractAddr, sigData, p.expiration, p.allhash)
+        //any EOA wallet can call the zkPassWallet, but only with the correct password can be excuted
+        await zkPassWallet.connect(accounts[1]).call(p.proof, contractAddr, sigData, p.expiration, p.allhash)
         console.log('withdraw ERC20 done')
 
         await print()
@@ -91,7 +91,7 @@ describe('SimpleWallet2-test', function () {
 
     it('batch withdraw', async function () {
         let pwd = 'abc123'
-        let nonce = s(await zkPass.nonceOf(simpleWallet.address))
+        let nonce = s(await zkPass.nonceOf(zkPassWallet.address))
         let contractAddr = usdt.address
         const ERC = await ethers.getContractFactory('MockERC20')
         let sigData1 = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(40, 18)])
@@ -99,9 +99,9 @@ describe('SimpleWallet2-test', function () {
 
         let datahash = utils.solidityKeccak256(['address', 'bytes', 'address', 'bytes'], [contractAddr, sigData1, contractAddr, sigData2])
         datahash = s(b(datahash))
-        let p = await getProof(pwd, simpleWallet.address, nonce, datahash)
+        let p = await getProof(pwd, zkPassWallet.address, nonce, datahash)
 
-        await simpleWallet.connect(accounts[1]).batchCall(p.proof, [contractAddr, contractAddr], [sigData1, sigData2], p.expiration, p.allhash)
+        await zkPassWallet.connect(accounts[1]).batchCall(p.proof, [contractAddr, contractAddr], [sigData1, sigData2], p.expiration, p.allhash)
         console.log('batch withdraw ERC20 done')
 
         await print()
@@ -154,7 +154,7 @@ describe('SimpleWallet2-test', function () {
 
         console.log('account0 usdt:', d(await usdt.balanceOf(accounts[0].address), 18))
         console.log('account1 usdt:', d(await usdt.balanceOf(accounts[1].address), 18))
-        console.log('simpleWallet usdt:', d(await usdt.balanceOf(simpleWallet.address), 18))
+        console.log('zkPassWallet usdt:', d(await usdt.balanceOf(zkPassWallet.address), 18))
 
         console.log('')
     }

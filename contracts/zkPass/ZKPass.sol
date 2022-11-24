@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
+import "../interfaces/IZKPass.sol";
 import "./verifier.sol";
 
-contract ZKPass {
+contract ZKPass is IZKPass {
     Verifier verifier = new Verifier();
-
-    event SetPassword(address indexed user, uint indexed pwdhash);
-
-    event Verified(address indexed user, uint indexed nonce);
 
     mapping(address => uint) public pwdhashOf;
 
@@ -25,7 +22,7 @@ contract ZKPass {
         uint pwdhash2,
         uint expiration2,
         uint allhash2
-    ) public {
+    ) public override {
         uint nonce = nonceOf[msg.sender];
 
         if (nonce == 0) {
@@ -54,7 +51,7 @@ contract ZKPass {
         uint datahash,
         uint expiration,
         uint allhash
-    ) public {
+    ) public override {
         require(
             block.timestamp < expiration,
             "ZKPass::verify: expired"
