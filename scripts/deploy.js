@@ -4,15 +4,20 @@ const { BigNumber, utils } = require('ethers')
 
 
 
-// polygon mainnet 2022-11-8
+// polygon mainnet 2022-11-8 BETA
 // deployer:  0x50D8aD8e7CC0C9c2236Aac2D2c5141C164168da3
 // ZKPass deployed: 0x72f3E7DdAe7f5B8859a230FE00f4214d582622fF
 // SafeboxFactory deployed: 0xd9403569f3447121eb78d426Bb5eFC7D10316b50
 
-// polygon mainnet 2022-11-20
+// polygon mainnet 2022-11-20 V1
 // deployer:  0xb42466f1c2B0d878ff14E76477f8AF016E5dBe26
 // ZKPass deployed: 0xCDc902C17985f5d66A857F67a2BD6f5A29cE225d
 // SafeboxFactory deployed: 0x5a93D9a81F1ee8368BaD0EEb0f653bB45bFc6329
+
+// bsc mainnet 2022-11-21 V1
+// deployer:  0xb42466f1c2B0d878ff14E76477f8AF016E5dBe26
+// ZKPass deployed: 0x930Db107c074E3f66C923180100F74fF4AABEaa5
+// SafeboxFactory deployed: 0xA4260E6f2532c29B69ac6015108c11434831eb14
 
 
 async function main() {
