@@ -2,10 +2,10 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require("snarkjs")
 const fs = require("fs")
 
-describe('deploy-test', function () {
+describe('crack-estimate', function () {
 
-    //Filcoin Poseidon: RTX3070:47.17Mhash/s, Ryzen5900X:7.41Mhash/s
-    //ETH SHA3: RTX3090:120Mhash/s, Mac M1:1Mhash/s
+    //Filcoin Poseidon: RTX3070:47.17Mhash/s, Ryzen5900X:7.41Mhash/s  [https://xilinx.eetrend.com/content/2022/100563236.html]
+    //ETH SHA3: RTX3090:120Mhash/s, Mac M1:1Mhash/s  [https://new.qq.com/rain/a/20210429A0BVTS00] [https://zhuanlan.zhihu.com/p/433295256]
     //Ours: Mac M1 1thread:0.1Mhash/s
     //Our estimate: Poseidon: RTX3090:100Mhash/s
 
