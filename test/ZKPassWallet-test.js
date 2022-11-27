@@ -6,7 +6,6 @@ describe('ZKPassWallet-test', function () {
     let accounts
     let provider
     let zkPassWallet
-    let zkID
     let zkPass
     let usdt
 
@@ -25,11 +24,6 @@ describe('ZKPassWallet-test', function () {
         await usdt.mint(accounts[1].address, m(1000, 18))
         console.log('usdt mint to accounts[1]', d(await usdt.balanceOf(accounts[1].address), 18))
 
-        const ZKID = await ethers.getContractFactory('ZKID')
-        zkID = await ZKID.deploy()
-        await zkID.deployed()
-        console.log('zkID deployed:', zkID.address)
-
         const ZKPass = await ethers.getContractFactory('ZKPass')
         zkPass = await ZKPass.deploy()
         await zkPass.deployed()
@@ -39,7 +33,7 @@ describe('ZKPassWallet-test', function () {
 
     it('deploy ZKPassWallet', async function () {
         const ZKPassWallet = await ethers.getContractFactory('ZKPassWallet')
-        zkPassWallet = await ZKPassWallet.deploy(zkPass.address, zkID.address)
+        zkPassWallet = await ZKPassWallet.deploy(zkPass.address)
         await zkPassWallet.deployed()
         console.log('zkPassWallet deployed:', zkPassWallet.address)
     })
@@ -56,16 +50,9 @@ describe('ZKPassWallet-test', function () {
     })
 
 
-    it('mint ZKID', async function () {
-        await zkID.mint(zkPassWallet.address, 2022)
-        console.log('mint ZKID done')
-    })
-
-
     it('deposit', async function () {
-        let addr = await zkID.ownerOf(2022)
-        await usdt.transfer(addr, m(100, 18))
-        console.log('deposit ERC20 to', addr)
+        await usdt.transfer(zkPassWallet.address, m(100, 18))
+        console.log('deposit ERC20 to', zkPassWallet.address)
 
         await print()
     })

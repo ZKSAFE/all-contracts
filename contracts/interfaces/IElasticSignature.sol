@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface IZKPass {
+interface IElasticSignature {
     /**
      * An event emitted after user set/reset his password
      * @param user - the password owner (it could be smartcontract wallet address)

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-import "../interfaces/IZKPass.sol";
+import "../interfaces/IElasticSignature.sol";
 import "./verifier.sol";
 
-contract ZKPass is IZKPass {
+contract ZKPass is IElasticSignature {
     Verifier verifier = new Verifier();
 
     mapping(address => uint) public pwdhashOf;

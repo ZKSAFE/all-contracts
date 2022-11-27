@@ -2,18 +2,15 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Context.sol";
-import "../interfaces/IZKPassWallet.sol";
+import "../interfaces/IElasticSignWallet.sol";
 import "./ZKPass.sol";
 import "./ZKID.sol";
 
-contract ZKPassWallet is Context, IZKPassWallet {
+contract ZKPassWallet is Context, IElasticSignWallet {
     ZKPass public zkPass;
 
-    ZKID public zkID;
-
-    constructor(address zkPassAddr, address zkIDAddr) {
+    constructor(address zkPassAddr) {
         zkPass = ZKPass(zkPassAddr);
-        zkID = ZKID(zkIDAddr);
     }
 
     receive() external payable {}
