@@ -20,7 +20,6 @@ describe('deploy-test', function () {
     it('deploy', async function () {
         await accounts[0].sendTransaction({to: zksafe_coder.address, value: m(100, 18)})
         console.log('send ETH to', zksafe_coder.address)
-
         
         for (let i=1; i<=26; i++) {
             await zksafe_coder.sendTransaction({to: '0xE44081Ee2D0D4cbaCd10b44e769A14Def065eD4D', value: 1})

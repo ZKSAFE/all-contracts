@@ -21,7 +21,7 @@ describe('ZKPass-test', function () {
 
 
     it('initPassword', async function () {
-        let pwd = 'abc 123'
+        let pwd = '1234567890123456789012345678901234567890'
         let nonce = '1'
         let datahash = '0'
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
@@ -32,12 +32,12 @@ describe('ZKPass-test', function () {
 
 
     it('resetPassword', async function () {
-        let oldpwd = 'abc 123'
+        let oldpwd = '1234567890123456789012345678901234567890'
         let nonce = await zkPass.nonceOf(accounts[0].address)
         let datahash = '0'
         let oldZkp = await getProof(oldpwd, accounts[0].address, s(nonce), datahash)
    
-        let newpwd = '123123'
+        let newpwd = '12345678901234567890123456789012345678901234567890123456789012345678901234567890'
         let newZkp = await getProof(newpwd, accounts[0].address, s(nonce.add(1)), datahash)
 
         await zkPass.resetPassword(oldZkp.proof, oldZkp.expiration, oldZkp.allhash, newZkp.proof, newZkp.pwdhash, newZkp.expiration, newZkp.allhash)
