@@ -5,15 +5,15 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract ZKID is ERC721 {
 
-    uint public inventory = 100;
+    uint public inventory = 50;
 
     uint public maxSupply = 200;
 
-    uint public newSupplyInterval = 100;
+    uint public newSupplyInterval = 10;
 
     uint public virturalETH = 1 ether;
 
-    uint public kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
+    uint public kLast;
 
     uint public onSaleID = 2101;
 
@@ -37,26 +37,48 @@ contract ZKID is ERC721 {
     }
 
     function price(uint buyNum) public view returns (uint) {
-        return 1 + kLast / (supply() - buyNum) - virturalETH;
+        uint _inventory = supply();
+        require(_inventory > buyNum, "ZKID:mintOne:: INSUFFICIENT_ZKID");
+
+        uint result;
+        for (uint i=0; i<buyNum; i++) {
+            uint _virturalETH = kLast / _inventory;
+            _inventory = _inventory - 1;
+            result += kLast / _inventory - _virturalETH;
+        }
+        return result;
     }
 
     function mint(uint buyNum, address to) public payable {
-        require(msg.value > 0, "ZKID:mint:: INSUFFICIENT_ETH");
-
-        inventory = supply();
-        require(buyNum > 0 && buyNum < inventory, "ZKID:mint:: INSUFFICIENT_BUY_NUM");
-
-        for (uint tokenId = onSaleID; tokenId < onSaleID + buyNum; tokenId++) {
-            _mint(to, tokenId);
+        uint fee;
+        for (uint i = 0; i < buyNum; i++) {
+            fee += mintOne(to);
         }
-        onSaleID += buyNum;
+
+        require(msg.value >= fee, "ZKID:mint:: INSUFFICIENT_ETH");
+
+        payable(feeTo).transfer(fee);
+        if (msg.value > fee) {
+            payable(msg.sender).transfer(msg.value - fee);
+        }
+    }
+
+    function mintOne(address to) internal returns (uint) {
+        inventory = supply();
+        require(inventory > 1, "ZKID:mintOne:: INSUFFICIENT_ZKID");
+
+        virturalETH = kLast / inventory;
+
+        _mint(to, onSaleID);
+
+        onSaleID += 1;
         lastMintTime = block.timestamp;
 
-        require((inventory - buyNum) * (virturalETH + msg.value) >= kLast, "ZKID:mint:: K");
+        uint _unitPrice = kLast / (inventory - 1) - virturalETH;
 
-        inventory -= buyNum;
-        kLast = inventory * virturalETH;
+        inventory -= 1;
+        virturalETH += _unitPrice;
 
-        payable(feeTo).transfer(msg.value);
+        return _unitPrice;
     }
 }
