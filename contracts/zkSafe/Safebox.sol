@@ -13,11 +13,11 @@ contract Safebox is Context {
 
     ZKPass public zkPass;
 
-    event WithdrawERC20(address indexed tokenAddr, uint amount);
+    event WithdrawERC20(address indexed to, address tokenAddr, uint amount);
 
-    event WithdrawERC721(address indexed tokenAddr, uint tokenId);
+    event WithdrawERC721(address indexed to, address tokenAddr, uint tokenId);
 
-    event WithdrawETH(uint amount);
+    event WithdrawETH(address indexed to, uint amount);
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -61,6 +61,7 @@ contract Safebox is Context {
      * Internal function without access restriction.
      */
     function _transferOwnership(address newOwner) internal virtual {
+        require(newOwner != _owner, "Safebox: newOwner is the same with the owner");
         address oldOwner = _owner;
         _owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
@@ -104,44 +105,48 @@ contract Safebox is Context {
     function withdrawETH(
         uint[8] memory proof,
         uint amount,
+        address to,
         uint expiration,
         uint allhash
     ) external onlyOwner {
-        zkPass.verify(owner(), proof, amount, expiration, allhash);
+        uint datahash = uint(keccak256(abi.encodePacked(amount, to)));
+        zkPass.verify(owner(), proof, datahash, expiration, allhash);
 
-        payable(owner()).transfer(amount);
+        payable(to).transfer(amount);
 
-        emit WithdrawETH(amount);
+        emit WithdrawETH(to, amount);
     }
 
     function withdrawERC20(
         uint[8] memory proof,
         address tokenAddr,
         uint amount,
+        address to,
         uint expiration,
         uint allhash
     ) external onlyOwner {
-        uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, amount)));
+        uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, amount, to)));
         zkPass.verify(owner(), proof, datahash, expiration, allhash);
 
-        IERC20(tokenAddr).safeTransfer(owner(), amount);
+        IERC20(tokenAddr).safeTransfer(to, amount);
 
-        emit WithdrawERC20(tokenAddr, amount);
+        emit WithdrawERC20(to, tokenAddr, amount);
     }
 
     function withdrawERC721(
         uint[8] memory proof,
         address tokenAddr,
         uint tokenId,
+        address to,
         uint expiration,
         uint allhash
     ) external onlyOwner {
-        uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, tokenId)));
+        uint datahash = uint(keccak256(abi.encodePacked(tokenAddr, tokenId, to)));
         zkPass.verify(owner(), proof, datahash, expiration, allhash);
 
-        IERC721(tokenAddr).transferFrom(address(this), owner(), tokenId);
+        IERC721(tokenAddr).transferFrom(address(this), to, tokenId);
 
-        emit WithdrawERC721(tokenAddr, tokenId);
+        emit WithdrawERC721(to, tokenAddr, tokenId);
     }
 
     ///////////////////////////////////

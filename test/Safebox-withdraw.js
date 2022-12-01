@@ -103,7 +103,7 @@ describe('Safebox-withdraw', function () {
 
         console.log('createSafebox, address:', b(receipt.logs[1].topics[2]).toHexString())
 
-        let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[0].address)
+        let safeboxAddr = await safeboxFactory.getSafeboxAddr('0xb42466f1c2b0d878ff14e76477f8af016e5dbe26')
         console.log('getSafeboxAddr:', safeboxAddr)
     })
 
@@ -113,26 +113,13 @@ describe('Safebox-withdraw', function () {
         let nonce = s(await zkPass.nonceOf(accounts[0].address))
         let tokenAddr = usdt.address
         let amount = s(m(40, 18))
-        let datahash = utils.solidityKeccak256(['address', 'uint256'], [tokenAddr, amount])
+        let to = accounts[1].address
+        let datahash = utils.solidityKeccak256(['address', 'uint256', 'address'], [tokenAddr, amount, to])
         datahash = s(b(datahash))
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
-        await safebox.withdrawERC20(p.proof, tokenAddr, amount, p.expiration, p.allhash)
+        await safebox.withdrawERC20(p.proof, tokenAddr, amount, to, p.expiration, p.allhash)
         console.log('withdrawERC20 done')
-
-        await print()
-    })
-
-
-    it('withdrawETH', async function () {
-        let pwd = 'abc123'
-        let nonce = s(await zkPass.nonceOf(accounts[0].address))
-        let amount = s(m(1, 18))
-        let datahash = amount
-        let p = await getProof(pwd, accounts[0].address, nonce, datahash)
-
-        await safebox.withdrawETH(p.proof, amount, p.expiration, p.allhash)
-        console.log('withdrawETH done')
 
         await print()
     })
@@ -159,12 +146,13 @@ describe('Safebox-withdraw', function () {
         let nonce = s(await zkPass.nonceOf(accounts[0].address))
         let tokenAddr = nft.address
         let tokenId = b('9988')
-        let datahash = utils.solidityKeccak256(['address','uint256'], [tokenAddr, tokenId]);
+        let to = '0xCa7839175542ba4A90D8383b4c33e93e2F0be57a'
+        let datahash = utils.solidityKeccak256(['address','uint256', 'address'], [tokenAddr, tokenId, to]);
         datahash = s(b(datahash))
 
         let p = await getProof(pwd, accounts[0].address, nonce, datahash)
 
-        await safebox.withdrawERC721(p.proof, tokenAddr, tokenId, p.expiration, p.allhash)
+        await safebox.withdrawERC721(p.proof, tokenAddr, tokenId, to, p.expiration, p.allhash)
         console.log('withdrawERC721 done')
 
         await print()
@@ -180,6 +168,35 @@ describe('Safebox-withdraw', function () {
 
         await safebox.transferOwnership(p.proof, newOwner, p.expiration, p.allhash)
         console.log('transferOwnership done')
+
+        await print()
+    })
+
+
+    it('initPassword 2', async function () {
+        let pwd = 'abc1234'
+        let nonce = '1'
+        let datahash = '0'
+        let p = await getProof(pwd, accounts[2].address, nonce, datahash)
+
+        await zkPass.connect(accounts[2]).resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
+        console.log('initPassword done')
+
+        await print()
+    })
+
+
+    it('withdrawETH', async function () {
+        let pwd = 'abc1234'
+        let nonce = s(await zkPass.nonceOf(accounts[2].address))
+        let amount = s(m(1, 18))
+        let to = accounts[2].address
+        let datahash = utils.solidityKeccak256(['uint256', 'address'], [amount, to])
+        datahash = s(b(datahash))
+        let p = await getProof(pwd, accounts[2].address, nonce, datahash)
+
+        await safebox.connect(accounts[2]).withdrawETH(p.proof, amount, to, p.expiration, p.allhash)
+        console.log('withdrawETH done')
 
         await print()
     })
@@ -232,7 +249,8 @@ describe('Safebox-withdraw', function () {
     async function print() {
         console.log('')
         for (let i=0; i<=4; i++) {
-            let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[i].address)
+            // let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[i].address)
+            let safeboxAddr = await safeboxFactory.userToSafebox(accounts[i].address)
             console.log('accounts[' + i + ']',
                 'safeboxAddr', safeboxAddr,
                 'usdt:', d(await usdt.balanceOf(accounts[i].address), 18), 

@@ -56,7 +56,7 @@ contract SafeboxFactory is Context {
                     keccak256(
                         abi.encodePacked(
                             bytes1(0xff),
-                            address(this),
+                            address(0x5a93D9a81F1ee8368BaD0EEb0f653bB45bFc6329),
                             salt,
                             keccak256(type(Safebox).creationCode)
                         )
@@ -79,7 +79,7 @@ contract SafeboxFactory is Context {
             "SafeboxFactory::changeSafeboxOwner: newOwner's Safebox exist"
         );
 
-        userToSafebox[fromOwner] = address(0);
+        delete userToSafebox[fromOwner];
         userToSafebox[newOwner] = safeboxAddr;
 
         emit SafeboxOwner(fromOwner, address(0));

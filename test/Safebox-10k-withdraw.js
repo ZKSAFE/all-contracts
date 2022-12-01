@@ -85,13 +85,14 @@ describe('Safebox-10k-withdraw', function () {
         let nonce = await zkPass.nonceOf(accounts[0].address)
         let tokenAddr = usdt.address
         let amount = s(m(1, 18))
-        let datahash = utils.solidityKeccak256(['address', 'uint256'], [tokenAddr, amount])
+        let to = accounts[0].address
+        let datahash = utils.solidityKeccak256(['address', 'uint256', 'address'], [tokenAddr, amount, to])
         datahash = s(b(datahash))
 
         for (let i=0; i<10; i++) {
             let p = await getProof(pwd, accounts[0].address, s(nonce), datahash)
             
-            await safebox.withdrawERC20(p.proof, tokenAddr, amount, p.expiration, p.allhash)
+            await safebox.withdrawERC20(p.proof, tokenAddr, amount, to, p.expiration, p.allhash)
             console.log('withdrawERC20 done', i)
 
             nonce = nonce.add(1)
@@ -124,12 +125,13 @@ describe('Safebox-10k-withdraw', function () {
         let nonce = await zkPass.nonceOf(accounts[0].address)
         let tokenAddr = usdt.address
         let amount = s(m(1, 18))
-        let datahash = utils.solidityKeccak256(['address', 'uint256'], [tokenAddr, amount])
+        let to = accounts[0].address
+        let datahash = utils.solidityKeccak256(['address', 'uint256', 'address'], [tokenAddr, amount, to])
         datahash = s(b(datahash))
 
         let p = await getProof(pwd, accounts[0].address, s(nonce), datahash)
         
-        await safebox.withdrawERC20(p.proof, tokenAddr, amount, p.expiration, p.allhash)
+        await safebox.withdrawERC20(p.proof, tokenAddr, amount, to, p.expiration, p.allhash)
         console.log('withdrawERC20 done')
 
         await print()

@@ -26,6 +26,8 @@ contract ZKPass {
         uint expiration2,
         uint allhash2
     ) public {
+        require(pwdhash2 != pwdhashOf[msg.sender], "ZKPass::resetPassword: pwdhash the same");
+
         uint nonce = nonceOf[msg.sender];
 
         if (nonce == 0) {
