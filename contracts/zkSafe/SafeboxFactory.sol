@@ -56,7 +56,7 @@ contract SafeboxFactory is Context {
                     keccak256(
                         abi.encodePacked(
                             bytes1(0xff),
-                            address(0x5a93D9a81F1ee8368BaD0EEb0f653bB45bFc6329),
+                            address(this),
                             salt,
                             keccak256(type(Safebox).creationCode)
                         )
