@@ -14,20 +14,51 @@ const { BigNumber, utils } = require('ethers')
 // ZKPass deployed: 0xCDc902C17985f5d66A857F67a2BD6f5A29cE225d
 // SafeboxFactory deployed: 0x5a93D9a81F1ee8368BaD0EEb0f653bB45bFc6329
 
+// op mainnet 2022-12-5
+// deployer:  0x45914F46006c3e6fD7d68064370fB6e1f5564550
+// ZKPass deployed: 0x9802cBf6480FE2a0c69740Bc8008739DfF1E7CEF
+// SafeboxFactory deployed: 0x8528d5a340Bef2e50844CDABdFa21bC6B57c3982
+
+// arbitrumOne mainnet 2022-12-5
+// deployer:  0x45914F46006c3e6fD7d68064370fB6e1f5564550
+// ZKPass deployed: 0x9802cBf6480FE2a0c69740Bc8008739DfF1E7CEF
+// SafeboxFactory deployed: 0x8528d5a340Bef2e50844CDABdFa21bC6B57c3982
+
+// polygon mainnet 2022-12-5
+// deployer:  0x45914F46006c3e6fD7d68064370fB6e1f5564550
+// ZKPass deployed: 0x9802cBf6480FE2a0c69740Bc8008739DfF1E7CEF
+// SafeboxFactory deployed: 0x8528d5a340Bef2e50844CDABdFa21bC6B57c3982
+
+// bsc mainnet 2022-12-5
+// deployer:  0x45914F46006c3e6fD7d68064370fB6e1f5564550
+// ZKPass deployed: 0x9802cBf6480FE2a0c69740Bc8008739DfF1E7CEF
+// SafeboxFactory deployed: 0x8528d5a340Bef2e50844CDABdFa21bC6B57c3982
+
+// eth mainnet 2022-12-5
+// deployer:  0x45914F46006c3e6fD7d68064370fB6e1f5564550
+// ZKPass deployed: 0x9802cBf6480FE2a0c69740Bc8008739DfF1E7CEF
+// SafeboxFactory deployed: 0x8528d5a340Bef2e50844CDABdFa21bC6B57c3982
 
 async function main() {
 	const accounts = await hre.ethers.getSigners()
-	console.log('deployer: ', accounts[0].address)
+	const deployer = accounts[0]
+	let deployerBalance = await deployer.getBalance()
+	console.log('deployer: ', deployer.address, 'balance: ', utils.formatEther(deployerBalance))
 
-	const ZKPass = await ethers.getContractFactory('ZKPass')
-	const zkPass = await ZKPass.deploy()
-	await zkPass.deployed()
-	console.log('ZKPass deployed:', zkPass.address)
+	let gasPrice = await deployer.getGasPrice()
+	console.log('gasPrice', utils.formatUnits(gasPrice, 'gwei') + 'Gwei')
+	let fastGasPrice = gasPrice.add(gasPrice.div(2))
+	console.log('fastGasPrice', utils.formatUnits(fastGasPrice, 'gwei') + 'Gwei')
 
-	const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
-	const safeboxFactory = await SafeboxFactory.deploy(zkPass.address)
-	await safeboxFactory.deployed()
-	console.log('SafeboxFactory deployed:', safeboxFactory.address)
+	// const ZKPass = await ethers.getContractFactory('ZKPass')
+	// const zkPass = await ZKPass.deploy({gasPrice: fastGasPrice})
+	// await zkPass.deployed()
+	// console.log('ZKPass deployed:', zkPass.address)
+
+	// const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
+	// const safeboxFactory = await SafeboxFactory.deploy(zkPass.address, {gasPrice: fastGasPrice})
+	// await safeboxFactory.deployed()
+	// console.log('SafeboxFactory deployed:', safeboxFactory.address)
 
 	console.log('done')
 }
