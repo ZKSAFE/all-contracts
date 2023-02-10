@@ -1,4 +1,4 @@
-require("@nomicfoundation/hardhat-toolbox");
+require('@nomicfoundation/hardhat-toolbox');
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -7,65 +7,96 @@ module.exports = {
     hardhat: {
 
     },
-    kovan: {
-      url: 'https://kovan.infura.io/v3/c7cd730e3f1e4f9a8c702c6cb9d17f3f',
-      chainId: 42,
-      accounts: [
-        process.env.ZKSAFE_Coder_PK,
+    eth_mainnet: {
+			url: 'https://rpc.ankr.com/eth',
+			chainId: 1,
+			accounts: [
+				// process.env.ZKSAFE_Deployer_PK,
+        process.env.OpenWallet_PK,
         process.env.ETH_PK_0,
-      ]
-    },
-    matic_mainnet: {
-      // url: 'https://rpc-mainnet.maticvigil.com/v1/6ca36da1323f40dc42d64ed9ba89da9a6f59c23d',
-      // url: 'https://rpc-mainnet.matic.network',
+			]
+		},
+    polygon: {
       url: 'https://matic-mainnet.chainstacklabs.com',
-      // url: 'https://rpc-mainnet.matic.quiknode.pro',
-      // url: 'https://matic-mainnet-full-rpc.bwarelabs.com',
-      // url: 'https://matic-mainnet-archive-rpc.bwarelabs.com',
       chainId: 137,
       accounts: [
-        process.env.ZKSAFE_Coder_PK,
+        process.env.ZKSAFE_Deployer_PK,
         process.env.ETH_PK_0,
       ]
     },
-    matic_testnet: {
-      url: 'https://matic-mumbai.chainstacklabs.com',
-      chainId: 80001,
-      accounts: [
-        process.env.ZKSAFE_Coder_PK,
-        process.env.ETH_PK_0,
-      ]
-    },
-    bsc_testnet: {
-			url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-			chainId: 97,
-			accounts: [
-				process.env.ZKSAFE_Coder_PK,
-        process.env.ETH_PK_0,
-			]
-		},
-		bsc_mainnet: {
-			url: 'https://bsc-dataseed4.ninicoin.io/',
+		bsc: {
+			url: 'https://rpc.ankr.com/bsc',
 			chainId: 56,
 			accounts: [
-				process.env.ZKSAFE_Coder_PK,
+				process.env.ZKSAFE_Deployer_PK,
         process.env.ETH_PK_0,
 			]
 		},
-		metis_testnet: {
-			url: 'https://stardust.metis.io/?owner=588',
-			chainId: 588,
+		op_mainnet: {
+			url: 'https://mainnet.optimism.io/',
+			chainId: 10,
 			accounts: [
-				process.env.ZKSAFE_Coder_PK,
+				process.env.ZKSAFE_Deployer_PK,
+        process.env.ETH_PK_0,
+			]
+		},
+		arbitrumOne: {
+			url: 'https://arb1.arbitrum.io/rpc',
+			chainId: 42161,
+			accounts: [
+				process.env.ZKSAFE_Deployer_PK,
+        process.env.ETH_PK_0,
+			]
+		},
+		scroll_testnet: {
+			url: 'https://prealpha-rpc.scroll.io/l2',
+			chainId: 534354,
+			accounts: [
         process.env.ETH_PK_0,
 			]
 		},
   },
-  solidity: '0.8.9',
+  solidity: {
+		compilers: [
+			{
+			  version: '0.8.9',
+			},
+      {
+        version: '0.6.12',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      }
+		]
+	},
   etherscan: {
     apiKey: {
+        eth_mainnet: process.env.Etherscan_API_KEY,
+        op_mainnet: process.env.Opscan_API_KEY,
+        arbitrumOne: process.env.Arbiscan_API_KEY,
         polygon: process.env.Polygonscan_API_KEY,
-        bsc: process.env.Bscscan_API_KEY
-    }
+        bsc: process.env.Bscscan_API_KEY,
+    },
+    customChains: [
+      {
+        network: 'eth_mainnet',
+        chainId: 1,
+        urls: {
+          apiURL: 'https://api.etherscan.com/api',
+          browserURL: 'https://etherscan.io'
+        }
+      },
+      {
+        network: 'op_mainnet',
+        chainId: 10,
+        urls: {
+          apiURL: 'https://api-optimistic.etherscan.io/api',
+          browserURL: 'https://optimistic.etherscan.io'
+        }
+      }
+    ]
   }
 };

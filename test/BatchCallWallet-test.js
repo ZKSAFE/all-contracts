@@ -1,13 +1,11 @@
 const { BigNumber, utils } = require('ethers')
-const snarkjs = require('snarkjs')
-const fs = require('fs')
-const { util } = require('chai')
+const snarkjs = require("snarkjs")
+const fs = require("fs")
 
-describe('Relayer-test', function () {
+describe('BatchCallWallet-test', function () {
     let accounts
     let provider
     let wallet
-    let relayer
     let usdt
 
     before(async function () {
@@ -22,67 +20,62 @@ describe('Relayer-test', function () {
         console.log('usdt deployed:', usdt.address)
         await usdt.mint(accounts[0].address, m(1000, 18))
         console.log('usdt mint to accounts[0]', d(await usdt.balanceOf(accounts[0].address), 18))
-   
-        const Relayer = await ethers.getContractFactory('Relayer')
-        relayer = await Relayer.connect(accounts[1]).deploy(usdt.address)
-        await relayer.deployed()
-        console.log('relayer deployed:', relayer.address)
+        await usdt.mint(accounts[1].address, m(1000, 18))
+        console.log('usdt mint to accounts[1]', d(await usdt.balanceOf(accounts[1].address), 18))
     })
 
 
-    it('user deploy BatchCallWallet & deposit', async function () {
+    it('deploy BatchCallWallet', async function () {
         const BatchCallWallet = await ethers.getContractFactory('BatchCallWallet')
-        wallet = await BatchCallWallet.connect(accounts[0]).deploy()
+        wallet = await BatchCallWallet.connect(accounts[1]).deploy()
         await wallet.deployed()
         console.log('wallet deployed:', wallet.address)
+    })
 
-        //deposit usdt from EOA to BatchCallWallet
-        await usdt.transfer(wallet.address, m(1000, 18))
+
+    it('deposit', async function () {
+        await accounts[0].sendTransaction({to: wallet.address, value: m(5, 18)})
+        console.log('transfer ETH done')
+
+        await usdt.transfer(wallet.address, m(100, 18))
         console.log('deposit ERC20 to', wallet.address)
-
-        //deposit usdt as gas from BatchCallWallet to Relayer
-        let to = usdt.address
-        let value = m(0, 18)
-        let ERC = await ethers.getContractFactory('MockERC20')
-        let data = ERC.interface.encodeFunctionData('transfer(address,uint256)', [relayer.address, m(100, 18)])
-        let call = {to, value, data}
-
-        let s = await signBatchCall(accounts[0], wallet.address, [call])
-        let signedBatchCall = BatchCallWallet.interface.encodeFunctionData('validateBatchCall', [s.toArr, s.valueArr, s.dataArr, s.deadline, s.signature])
-
-        await relayer.depositCall([wallet.address], [signedBatchCall])
-        console.log('relayer depositCall done')
 
         await print()
     })
 
 
-    it('freeCall', async function () {
+    it('batchCall', async function () {
+        let contractAddr = usdt.address
+        let value = m(0, 18)
+        const ERC = await ethers.getContractFactory('MockERC20')
+        let data1 = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(1, 18)])
+
+        let abi = getAbi('./artifacts/contracts/mock/MockERC20.sol/MockERC20.json')
+        let interface = new ethers.utils.Interface(abi)
+        let data2 = interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(2, 18)])
+
+        await wallet.connect(accounts[1]).batchCall([contractAddr, contractAddr, accounts[1].address], [value, value, m(1, 18)], [data1, data2, 0x0])
+        console.log('batch withdraw done')
+
+        await print()
+    })
+
+    it('validateBatchCall', async function () {
         let to = usdt.address
         let value = m(0, 18)
-        let ERC = await ethers.getContractFactory('MockERC20')
-        let data = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[0].address, m(300, 18)])
+        let codedParam = utils.defaultAbiCoder.encode(['address','uint'], [accounts[1].address, m(1, 18)])
+        let selector = utils.hexDataSlice(utils.keccak256(stringToHex('transfer(address,uint256)')), 0, 4)
+        let data = utils.hexConcat([selector, codedParam])
+        // equal to bellow
+        // const ERC = await ethers.getContractFactory('MockERC20')
+        // let functionData = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(1, 18)])
+
         let call = {to, value, data}
 
-        //mock multiple calls batch to one
-        let callArr = []
-        for (let i=0; i<2; i++) {
-            callArr.push(call)
-        }
+        let s = await signBatchCall(accounts[1], wallet.address, [call])
 
-        //mock multiple users
-        const BatchCallWallet = await ethers.getContractFactory('BatchCallWallet')
-        let walletArr = []
-        let signedBatchCallArr = []
-        for (let i=0; i<10; i++) {
-            let s = await signBatchCall(accounts[0], wallet.address, [call])
-            let signedBatchCall = BatchCallWallet.interface.encodeFunctionData('validateBatchCall', [s.toArr, s.valueArr, s.dataArr, s.deadline, s.signature])
-            walletArr.push(wallet.address)
-            signedBatchCallArr.push(signedBatchCall)
-        }
-
-        let gasUsed = (await (await relayer.freeCall(walletArr, signedBatchCallArr)).wait()).gasUsed
-        console.log('relayer freeCall done', gasUsed)
+        await wallet.connect(accounts[2]).validateBatchCall(s.toArr, s.valueArr, s.dataArr, s.deadline, s.signature)
+        console.log('validateBatchCall')
 
         await print()
     })
@@ -125,8 +118,6 @@ describe('Relayer-test', function () {
         console.log('account0 usdt:', d(await usdt.balanceOf(accounts[0].address), 18), 'eth:', d(await provider.getBalance(accounts[0].address), 18))
         console.log('account1 usdt:', d(await usdt.balanceOf(accounts[1].address), 18), 'eth:', d(await provider.getBalance(accounts[1].address), 18))
         console.log('wallet usdt:', d(await usdt.balanceOf(wallet.address), 18), 'eth:', d(await provider.getBalance(wallet.address), 18))
-        console.log('relayer usdt:', d(await usdt.balanceOf(relayer.address), 18), 'eth:', d(await provider.getBalance(relayer.address), 18))
-        console.log('wallet usdt in relayer:', d(await relayer.balanceOf(wallet.address), 18))
 
         console.log('')
     }
