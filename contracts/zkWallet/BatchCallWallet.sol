@@ -3,13 +3,14 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
-contract BatchCallWallet is Ownable {
+contract BatchCallWallet is Ownable, ReentrancyGuard {
     using ECDSA for bytes32;
 
-    uint public nonce;
-    
+    uint public nonce = 1;
+
 
     constructor() {}
 
@@ -21,6 +22,7 @@ contract BatchCallWallet is Ownable {
         bytes calldata data
     ) public onlyOwner {
         (bool success, bytes memory result) = to.call{value: value}(data);
+        console.logBytes(result);
         if (!success) {
             assembly {
                 revert(add(result, 32), mload(result))
@@ -28,6 +30,7 @@ contract BatchCallWallet is Ownable {
         }
         nonce++;
     }
+
 
     function batchCall(
         address[] calldata toArr,
@@ -45,7 +48,7 @@ contract BatchCallWallet is Ownable {
                 }
             }
         }
-        nonce += toArr.length;
+        nonce++;
     }
 
 
@@ -54,9 +57,11 @@ contract BatchCallWallet is Ownable {
         uint[] calldata valueArr,
         bytes[] calldata dataArr,
         uint deadline,
+        address sender,
         bytes calldata signature
-    ) external {
-        require(deadline >= block.timestamp, "validateBatchCall: EXPIRED");
+    ) external nonReentrant {
+        require(deadline >= block.timestamp, "validateBatchCall: Expired");
+        require(sender == address(0) || sender == msg.sender, "validateBatchCall: Sender Error");
         require(
             owner() ==
                 keccak256(
@@ -74,13 +79,19 @@ contract BatchCallWallet is Ownable {
             (bool success, bytes memory result) = toArr[i].call{
                 value: valueArr[i]
             }(dataArr[i]);
-            
+
             if (!success) {
                 assembly {
                     revert(add(result, 32), mload(result))
                 }
             }
         }
-        nonce += toArr.length;
+        nonce++;
     }
+
+
+    function setNonce(uint value) public onlyOwner {
+        nonce = value;
+    }
+
 }

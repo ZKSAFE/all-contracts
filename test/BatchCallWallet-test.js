@@ -7,6 +7,7 @@ describe('BatchCallWallet-test', function () {
     let provider
     let wallet
     let usdt
+    let check
 
     before(async function () {
         accounts = await ethers.getSigners()
@@ -22,6 +23,11 @@ describe('BatchCallWallet-test', function () {
         console.log('usdt mint to accounts[0]', d(await usdt.balanceOf(accounts[0].address), 18))
         await usdt.mint(accounts[1].address, m(1000, 18))
         console.log('usdt mint to accounts[1]', d(await usdt.balanceOf(accounts[1].address), 18))
+
+        const AssetsCheck = await ethers.getContractFactory('AssetsCheck')
+        check = await AssetsCheck.deploy()
+        await check.deployed()
+        console.log('check deployed:', check.address)
     })
 
 
@@ -44,8 +50,23 @@ describe('BatchCallWallet-test', function () {
     })
 
 
+    it('call', async function () {
+        console.log('account0 eth:', d(await provider.getBalance(accounts[0].address), 18))
+        //check user's balance
+        let to = check.address
+        let value = m(0, 18)
+        const AssetsCheck = await ethers.getContractFactory('AssetsCheck')
+        let data = AssetsCheck.interface.encodeFunctionData('checkETHBalanceNotLessThan', [accounts[0].address, m(9994, 18)])
+
+        await wallet.connect(accounts[1]).call(to, value, data)
+        console.log('call done')
+
+        await print()
+    })
+
+
     it('batchCall', async function () {
-        let contractAddr = usdt.address
+        let to = usdt.address
         let value = m(0, 18)
         const ERC = await ethers.getContractFactory('MockERC20')
         let data1 = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(1, 18)])
@@ -54,11 +75,12 @@ describe('BatchCallWallet-test', function () {
         let interface = new ethers.utils.Interface(abi)
         let data2 = interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(2, 18)])
 
-        await wallet.connect(accounts[1]).batchCall([contractAddr, contractAddr, accounts[1].address], [value, value, m(1, 18)], [data1, data2, 0x0])
+        await wallet.connect(accounts[1]).batchCall([to, to, accounts[1].address], [value, value, m(1, 18)], [data1, data2, []])
         console.log('batch withdraw done')
 
         await print()
     })
+
 
     it('validateBatchCall', async function () {
         let to = usdt.address
@@ -68,20 +90,26 @@ describe('BatchCallWallet-test', function () {
         let data = utils.hexConcat([selector, codedParam])
         // equal to bellow
         // const ERC = await ethers.getContractFactory('MockERC20')
-        // let functionData = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(1, 18)])
-
+        // let data = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(1, 18)])
         let call = {to, value, data}
+  
+        to = check.address
+        value = m(0, 18)
+        const AssetsCheck = await ethers.getContractFactory('AssetsCheck')
+        data = AssetsCheck.interface.encodeFunctionData('checkTokenBalanceEqualTo', [wallet.address, usdt.address, m(96, 18)])
+        let call2 = {to, value, data}
 
-        let s = await signBatchCall(accounts[1], wallet.address, [call])
+        let address0 = '0x0000000000000000000000000000000000000000'
+        let s = await signBatchCall(accounts[1], wallet.address, [call, call2], address0)
 
-        await wallet.connect(accounts[2]).validateBatchCall(s.toArr, s.valueArr, s.dataArr, s.deadline, s.signature)
+        await wallet.connect(accounts[2]).validateBatchCall(s.toArr, s.valueArr, s.dataArr, s.deadline, s.sender, s.signature)
         console.log('validateBatchCall')
 
         await print()
     })
 
 
-    async function signBatchCall(signer, fromWallet, callArr) {
+    async function signBatchCall(signer, fromWallet, callArr, sender) {
         let toArr = []
         let valueArr = []
         let dataArr = []
@@ -100,7 +128,7 @@ describe('BatchCallWallet-test', function () {
         const BatchCallWallet = await ethers.getContractFactory('BatchCallWallet')
         let nonce = await (await BatchCallWallet.attach(fromWallet)).nonce()
 
-        let batchCall = BatchCallWallet.interface.encodeFunctionData('validateBatchCall', [toArr, valueArr, dataArr, deadline, []])
+        let batchCall = BatchCallWallet.interface.encodeFunctionData('validateBatchCall', [toArr, valueArr, dataArr, deadline, sender, []])
         batchCall = utils.hexConcat([batchCall, utils.hexZeroPad(chainId, 31), fromWallet, utils.hexZeroPad(nonce, 32)])
         // console.log('[nodejs] batchCall')
         // console.log(batchCall)
@@ -108,7 +136,7 @@ describe('BatchCallWallet-test', function () {
         let hash = utils.keccak256(batchCall)
         let signature = await signer.signMessage(utils.arrayify(hash))
 
-        return {toArr, valueArr, dataArr, deadline, chainId, fromWallet, nonce, signature}
+        return {toArr, valueArr, dataArr, deadline, chainId, fromWallet, nonce, sender, signature}
     }
 
 
