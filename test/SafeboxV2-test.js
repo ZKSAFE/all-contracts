@@ -2,14 +2,14 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require("snarkjs")
 const fs = require("fs")
 
-describe('Safebox-withdraw', function () {
+describe('SafeboxV2-test', function () {
     let accounts
     let provider
     let zkPass
     let safeboxFactory
     let safebox
     let usdt
-    let busd
+    let token
     let nft
 
     before(async function () {
@@ -26,15 +26,14 @@ describe('Safebox-withdraw', function () {
         console.log('usdt mint to accounts[0]', d(await usdt.balanceOf(accounts[0].address), 18))
 		await usdt.mint(accounts[1].address, m(1000, 18))
         console.log('usdt mint to accounts[1]', d(await usdt.balanceOf(accounts[1].address), 18))
-
-
-        busd = await MockERC20.deploy('MockBUSD', 'BUSD')
-        await busd.deployed()
-        console.log('busd deployed:', busd.address)
-		await busd.mint(accounts[0].address, m(1000, 18))
-        console.log('busd mint to accounts[0]', d(await busd.balanceOf(accounts[0].address), 18))
-		await busd.mint(accounts[1].address, m(1000, 18))
-        console.log('busd mint to accounts[1]', d(await busd.balanceOf(accounts[1].address), 18))
+        
+        token = await MockERC20.deploy('MockToken', 'Token')
+        await token.deployed()
+        console.log('token deployed:', token.address)
+		await token.mint(accounts[0].address, m(1000, 18))
+        console.log('token mint to accounts[0]', d(await token.balanceOf(accounts[0].address), 18))
+		await token.mint(accounts[1].address, m(1000, 18))
+        console.log('token mint to accounts[1]', d(await token.balanceOf(accounts[1].address), 18))
 
 
         const MockERC721 = await ethers.getContractFactory('MockERC721')
@@ -51,139 +50,170 @@ describe('Safebox-withdraw', function () {
         console.log('zkPass deployed:', zkPass.address)
         
         
-        const SafeboxFactory = await ethers.getContractFactory('SafeboxFactory')
-        safeboxFactory = await SafeboxFactory.deploy(zkPass.address)
+        const SafeboxFactory = await ethers.getContractFactory('SafeboxV2Factory')
+        safeboxFactory = await SafeboxFactory.deploy([zkPass.address, usdt.address])
         await safeboxFactory.deployed()
         console.log('safeboxFactory deployed:', safeboxFactory.address)
         
 
-        let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[0].address)
+        let safeboxAddr = await safeboxFactory.newSafeboxAddr(accounts[0].address)
         console.log('safebox predictedAddress', safeboxAddr)
-        const Safebox = await ethers.getContractFactory('Safebox')
+        const Safebox = await ethers.getContractFactory('SafeboxV2')
         safebox = await Safebox.attach(safeboxAddr)
     })
 
 
     it('deposit', async function () {
         await usdt.transfer(safebox.address, m(100, 18))
-        console.log('transfer ERC20 done')
+        console.log('transfer USDT done')
+
+        await token.transfer(safebox.address, m(100, 18))
+        console.log('transfer Token done')
 
         await nft.transferFrom(accounts[0].address, safebox.address, b('9988'))
-        console.log('transfer ERC721 done')
+        console.log('transfer NFT done')
 
-        let gasLimit = await accounts[0].estimateGas({to: safebox.address, value: m(2, 18)})
-        console.log('deposit ETH gasLimit', gasLimit)
+        // let gasLimit = await accounts[0].estimateGas({to: safebox.address, value: m(2, 18)})
+        // console.log('deposit ETH gasLimit', gasLimit)
 
-        await accounts[0].sendTransaction({to: safebox.address, value: m(2, 18)})
+        await accounts[0].sendTransaction({to: safebox.address, value: m(200, 18)})
         console.log('transfer ETH done')
 
         await print()
     })
 
 
-    it('initPassword', async function () {
+    it('createSafebox', async function () {
         let pwd = 'abc123'
         let nonce = '1'
         let datahash = '0'
-        let p = await getProof(pwd, accounts[0].address, nonce, datahash)
+        let p = await getProof(pwd, safebox.address, nonce, datahash)
 
-        await zkPass.resetPassword(p.proof, 0, 0, p.proof, p.pwdhash, p.expiration, p.allhash)
-        console.log('initPassword done')
-
-        await print()
-    })
-
-
-    it('createSafebox', async function () {
-        let tx = await safeboxFactory.createSafebox()
+        let tx = await safeboxFactory.createSafebox(p.proof, p.pwdhash, p.expiration, p.allhash)
         console.log('submited')
 
         let receipt = await tx.wait()
         console.log('submited done')
 
-        console.log('createSafebox, address:', b(receipt.logs[1].topics[2]).toHexString())
-
-        let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[0].address)
-        console.log('getSafeboxAddr:', safeboxAddr)
+        console.log('createSafebox, address:', b(receipt.logs[2].topics[2]).toHexString())
     })
 
 
-    it('withdrawERC20', async function () {
+    it('resetPk', async function () {
         let pwd = 'abc123'
-        let nonce = s(await zkPass.nonceOf(accounts[0].address))
-        let tokenAddr = usdt.address
-        let amount = s(m(40, 18))
-        let datahash = utils.solidityKeccak256(['address', 'uint256'], [tokenAddr, amount])
-        datahash = s(b(datahash))
-        let p = await getProof(pwd, accounts[0].address, nonce, datahash)
+        let nonce = s(await zkPass.nonceOf(safebox.address))
+        let datahash = s(b(accounts[0].address))
+        let p = await getProof(pwd, safebox.address, nonce, datahash)
 
-        await safebox.withdrawERC20(p.proof, tokenAddr, amount, p.expiration, p.allhash)
-        console.log('withdrawERC20 done')
+        await safebox.resetPk(accounts[0].address, p.proof, p.expiration, p.allhash)
+        console.log('resetPk done')
 
-        await print()
+        console.log('safebox pkAddr:', await safebox.pkAddr())
     })
 
 
-    it('withdrawETH', async function () {
+    it('withdraw NFT with pk', async function () {
+        let to = nft.address
+        let value = m(0, 18)
+        const ERC = await ethers.getContractFactory('MockERC721')
+        let data = ERC.interface.encodeFunctionData('transferFrom(address,address,uint256)', [safebox.address, accounts[1].address, '9988'])
+
+        await safebox.call(to, value, data)
+        console.log('withdraw NFT done')
+
+        await print()
+        await printWithdrawLimit()
+    })
+
+
+    it('withdraw Token with pk', async function () {
+        let to = token.address
+        let value = m(0, 18)
+        const ERC = await ethers.getContractFactory('MockERC20')
+        let data = ERC.interface.encodeFunctionData('approve(address,uint256)', [accounts[1].address, m(1, 18)])
+
+        await safebox.call(to, value, data)
+        console.log('withdraw Token done')
+        
+        await print()
+        await printWithdrawLimit()
+    })
+
+
+    it('withdraw USDT with pk', async function () {
+        let to = usdt.address
+        let value = m(0, 18)
+        const ERC = await ethers.getContractFactory('MockERC20')
+        let data = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(9, 18)])
+
+        await safebox.call(to, value, data)
+        console.log('withdraw USDT done')
+        
+        await print()
+        await printWithdrawLimit()
+    })
+
+
+    it('withdraw USDT with pk', async function () {
+        await delay(5)
+
+        let to = usdt.address
+        let value = m(0, 18)
+        const ERC = await ethers.getContractFactory('MockERC20')
+        let data = ERC.interface.encodeFunctionData('transfer(address,uint256)', [accounts[1].address, m(3, 18)])
+
+        await safebox.call(to, value, data)
+        console.log('withdraw USDT done')
+        
+        await print()
+        await printWithdrawLimit()
+    })
+
+
+    it('withdraw ETH with pk', async function () {
+        let to = accounts[1].address
+        let value = m(9, 18)
+        let data = []
+
+        await safebox.call(to, value, data)
+        console.log('withdraw ETH done')
+        
+        await print()
+        await printWithdrawLimit()
+    })
+
+
+    it('withdraw ETH with pk', async function () {
+        await delay(5)
+        
+        let to = accounts[1].address
+        let value = m(2, 18)
+        let data = []
+
+        await safebox.call(to, value, data)
+        console.log('withdraw ETH done')
+        
+        await print()
+        await printWithdrawLimit()
+    })
+
+
+    it('withdraw ETH with pwd+pk', async function () {
+        let to = accounts[1].address
+        let value = m(11, 18)
+        let data = []
+
         let pwd = 'abc123'
-        let nonce = s(await zkPass.nonceOf(accounts[0].address))
-        let amount = s(m(1, 18))
-        let datahash = amount
-        let p = await getProof(pwd, accounts[0].address, nonce, datahash)
+        let nonce = s(await zkPass.nonceOf(safebox.address))
+        let datahash = utils.solidityKeccak256(['address','uint256','bytes'], [to, value, data])
+        
+        let p = await getProof(pwd, safebox.address, nonce, datahash)
 
-        await safebox.withdrawETH(p.proof, amount, p.expiration, p.allhash)
-        console.log('withdrawETH done')
-
-        await print()
-    })
-
-
-    it('resetPassword', async function () {
-        let oldpwd = 'abc123'
-        let nonce = await zkPass.nonceOf(accounts[0].address)
-        let datahash = '0'
-        let oldZkp = await getProof(oldpwd, accounts[0].address, s(nonce), datahash)
-   
-        let newpwd = '123123'
-        let newZkp = await getProof(newpwd, accounts[0].address, s(nonce.add(1)), datahash)
-
-        await zkPass.resetPassword(oldZkp.proof, oldZkp.expiration, oldZkp.allhash, newZkp.proof, newZkp.pwdhash, newZkp.expiration, newZkp.allhash)
-        console.log('resetPassword done')
+        await safebox.call2(to, value, data, p.proof, p.expiration, p.allhash)
+        console.log('withdraw ETH done')
 
         await print()
     })
-
-
-    it('withdrawERC721', async function () {
-        let pwd = '123123'
-        let nonce = s(await zkPass.nonceOf(accounts[0].address))
-        let tokenAddr = nft.address
-        let tokenId = b('9988')
-        let datahash = utils.solidityKeccak256(['address','uint256'], [tokenAddr, tokenId]);
-        datahash = s(b(datahash))
-
-        let p = await getProof(pwd, accounts[0].address, nonce, datahash)
-
-        await safebox.withdrawERC721(p.proof, tokenAddr, tokenId, p.expiration, p.allhash)
-        console.log('withdrawERC721 done')
-
-        await print()
-    })
-
-
-    it('transferOwnership', async function () {
-        let pwd = '123123'
-        let nonce = s(await zkPass.nonceOf(accounts[0].address))
-        let newOwner = accounts[2].address
-        let datahash = s(b(newOwner))
-        let p = await getProof(pwd, accounts[0].address, nonce, datahash)
-
-        await safebox.transferOwnership(p.proof, newOwner, p.expiration, p.allhash)
-        console.log('transferOwnership done')
-
-        await print()
-    })
-
 
 
 
@@ -228,18 +258,26 @@ describe('Safebox-withdraw', function () {
     }
 
 
+    async function printWithdrawLimit() {
+        console.log('')
+        let arr = await safebox.getWithdrawLimit()
+        console.log('safebox withdrawLimit: ethFree:', d(arr[0], 18), ' usdFree:', d(arr[1], 18))
+        console.log('')
+    }
+
+
     async function print() {
         console.log('')
         for (let i=0; i<=4; i++) {
-            let safeboxAddr = await safeboxFactory.getSafeboxAddr(accounts[i].address)
-            console.log('accounts[' + i + ']',
-                'safeboxAddr', safeboxAddr,
+            console.log('accounts[' + i + ']', accounts[i].address,
                 'usdt:', d(await usdt.balanceOf(accounts[i].address), 18), 
                 'eth:', d(await provider.getBalance(accounts[i].address), 18),
-                'safebox usdt:', d(await usdt.balanceOf(safeboxAddr), 18),
-                'safebox eth:', d(await provider.getBalance(safeboxAddr), 18)
 			)
 		}
+        console.log('safeboxAddr', safebox.address,
+            'usdt:', d(await usdt.balanceOf(safebox.address), 18),
+            'eth:', d(await provider.getBalance(safebox.address), 18)
+        )
         console.log('nft#9988 owner:', await nft.ownerOf(b('9988')))
         console.log('')
     }
@@ -261,6 +299,7 @@ describe('Safebox-withdraw', function () {
     }
 
     async function delay(sec) {
+        console.log('delay.. ' + sec + 's')
         return new Promise((resolve, reject) => {
             setTimeout(resolve, sec * 1000);
         })
