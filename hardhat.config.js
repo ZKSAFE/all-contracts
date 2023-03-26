@@ -48,9 +48,9 @@ module.exports = {
         process.env.ETH_PK_0,
 			]
 		},
-		scroll_testnet: {
-			url: 'https://prealpha-rpc.scroll.io/l2',
-			chainId: 534354,
+		scroll_alpha: {
+			url: 'https://alpha-rpc.scroll.io/l2',
+			chainId: 534353,
 			accounts: [
         process.env.ETH_PK_0,
 			]
