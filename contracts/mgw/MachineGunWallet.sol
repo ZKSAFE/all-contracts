@@ -6,11 +6,10 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
-contract BatchCallWallet is Ownable, ReentrancyGuard {
+contract MachineGunWallet is Ownable, ReentrancyGuard {
     using ECDSA for bytes32;
 
     uint public nonce = 1;
-
 
     constructor() {}
 

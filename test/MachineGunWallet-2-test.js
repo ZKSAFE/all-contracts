@@ -2,7 +2,7 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require("snarkjs")
 const fs = require("fs")
 
-describe('BatchCallWallet-2-test', function () {
+describe('MachineGunWallet-2-test', function () {
     let accounts
     let provider
     let wallet0
@@ -32,13 +32,13 @@ describe('BatchCallWallet-2-test', function () {
     })
 
 
-    it('deploy BatchCallWallet', async function () {
-        const BatchCallWallet = await ethers.getContractFactory('BatchCallWallet')
-        wallet0 = await BatchCallWallet.connect(accounts[0]).deploy()
+    it('deploy MachineGunWallet', async function () {
+        const MachineGunWallet = await ethers.getContractFactory('MachineGunWallet')
+        wallet0 = await MachineGunWallet.connect(accounts[0]).deploy()
         await wallet0.deployed()
         console.log('wallet0 deployed:', wallet0.address)
 
-        wallet1 = await BatchCallWallet.connect(accounts[1]).deploy()
+        wallet1 = await MachineGunWallet.connect(accounts[1]).deploy()
         await wallet1.deployed()
         console.log('wallet1 deployed:', wallet1.address)
     })
@@ -76,8 +76,8 @@ describe('BatchCallWallet-2-test', function () {
         //account0 batchCall with account1's signedBatchCall and other calls
         let checkData1 = AssetsCheck.interface.encodeFunctionData('stagingTokenBalance', [wallet0.address, usdt.address])
 
-        const BatchCallWallet = await ethers.getContractFactory('BatchCallWallet')
-        let validateBatchCallData = BatchCallWallet.interface.encodeFunctionData('validateBatchCall', [s.toArr, s.valueArr, s.dataArr, s.deadline, s.sender, s.signature])
+        const MachineGunWallet = await ethers.getContractFactory('MachineGunWallet')
+        let validateBatchCallData = MachineGunWallet.interface.encodeFunctionData('validateBatchCall', [s.toArr, s.valueArr, s.dataArr, s.deadline, s.sender, s.signature])
 
         let checkData2 = AssetsCheck.interface.encodeFunctionData('checkTokenBalanceIncreaseEqualTo', [wallet0.address, usdt.address, m(10, 18)])
 
@@ -108,10 +108,10 @@ describe('BatchCallWallet-2-test', function () {
 
         let deadline = Date.now() + 10000;
         let chainId = (await provider.getNetwork()).chainId
-        const BatchCallWallet = await ethers.getContractFactory('BatchCallWallet')
-        let nonce = await (await BatchCallWallet.attach(fromWallet)).nonce()
+        const MachineGunWallet = await ethers.getContractFactory('MachineGunWallet')
+        let nonce = await (await MachineGunWallet.attach(fromWallet)).nonce()
 
-        let batchCall = BatchCallWallet.interface.encodeFunctionData('validateBatchCall', [toArr, valueArr, dataArr, deadline, sender, []])
+        let batchCall = MachineGunWallet.interface.encodeFunctionData('validateBatchCall', [toArr, valueArr, dataArr, deadline, sender, []])
         batchCall = utils.hexConcat([batchCall, utils.hexZeroPad(chainId, 31), fromWallet, utils.hexZeroPad(nonce, 32)])
         // console.log('[nodejs] batchCall')
         // console.log(batchCall)
