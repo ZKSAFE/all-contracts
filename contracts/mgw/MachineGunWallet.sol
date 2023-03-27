@@ -60,6 +60,7 @@ contract MachineGunWallet is Ownable, ReentrancyGuard {
         bytes calldata signature
     ) external nonReentrant {
         require(deadline >= block.timestamp, "validateBatchCall: Expired");
+        // signer(owner) allows sender to submit this tx, if sender is 0x0, anyone is allowed
         require(sender == address(0) || sender == msg.sender, "validateBatchCall: Sender Error");
         require(
             owner() ==

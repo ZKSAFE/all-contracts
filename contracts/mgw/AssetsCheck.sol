@@ -8,11 +8,11 @@ import "hardhat/console.sol";
 
 contract AssetsCheck {
 
-    mapping (address => uint) public stagedETHBalance;
+    mapping (address => uint) public snappedETHBalance;
 
-    mapping (address => mapping (address => uint)) public stagedTokenBalance;
+    mapping (address => mapping (address => uint)) public snappedTokenBalance;
 
-    mapping (address => mapping (uint => mapping (address => uint))) public stagedNFT1155Balance;
+    mapping (address => mapping (uint => mapping (address => uint))) public snappedNFT1155Balance;
 
 
     constructor() {}
@@ -30,32 +30,32 @@ contract AssetsCheck {
         require(wallet.balance <= value, "checkETHBalanceNotLessThan fail");
     }
 
-    function stagingETHBalance(address wallet) public {
-        stagedETHBalance[wallet] = wallet.balance;
+    function snapETHBalance(address wallet) public {
+        snappedETHBalance[wallet] = wallet.balance;
     }
 
     function checkETHBalanceIncreaseEqualTo(address wallet, uint value) public view {
-        require(wallet.balance == stagedETHBalance[wallet] + value, "checkETHBalanceIncreaseEqualTo fail");
+        require(wallet.balance == snappedETHBalance[wallet] + value, "checkETHBalanceIncreaseEqualTo fail");
     }
 
     function checkETHBalanceIncreaseNotLessThan(address wallet, uint value) public view {
-        require(wallet.balance >= stagedETHBalance[wallet] + value, "checkETHBalanceIncreaseNotLessThan fail");
+        require(wallet.balance >= snappedETHBalance[wallet] + value, "checkETHBalanceIncreaseNotLessThan fail");
     }
 
     function checkETHBalanceIncreaseNotMoreThan(address wallet, uint value) public view {
-        require(wallet.balance <= stagedETHBalance[wallet] + value, "checkETHBalanceIncreaseNotMoreThan fail");
+        require(wallet.balance <= snappedETHBalance[wallet] + value, "checkETHBalanceIncreaseNotMoreThan fail");
     }
 
     function checkETHBalanceDecreaseEqualTo(address wallet, uint value) public view {
-        require(wallet.balance == stagedETHBalance[wallet] - value, "checkETHBalanceDecreaseEqualTo fail");
+        require(wallet.balance == snappedETHBalance[wallet] - value, "checkETHBalanceDecreaseEqualTo fail");
     }
 
     function checkETHBalanceDecreaseNotLessThan(address wallet, uint value) public view {
-        require(wallet.balance <= stagedETHBalance[wallet] - value, "checkETHBalanceDecreaseNotLessThan fail");
+        require(wallet.balance <= snappedETHBalance[wallet] - value, "checkETHBalanceDecreaseNotLessThan fail");
     }
 
     function checkETHBalanceDecreaseNotMoreThan(address wallet, uint value) public view {
-        require(wallet.balance >= stagedETHBalance[wallet] - value, "checkETHBalanceDecreaseNotMoreThan fail");
+        require(wallet.balance >= snappedETHBalance[wallet] - value, "checkETHBalanceDecreaseNotMoreThan fail");
     }
 
 
@@ -72,32 +72,32 @@ contract AssetsCheck {
         require(IERC20(tokenAddr).balanceOf(wallet) <= value, "checkTokenBalanceNotLessThan fail");
     }
 
-    function stagingTokenBalance(address wallet, address tokenAddr) public {
-        stagedTokenBalance[tokenAddr][wallet] = IERC20(tokenAddr).balanceOf(wallet);
+    function snapTokenBalance(address wallet, address tokenAddr) public {
+        snappedTokenBalance[tokenAddr][wallet] = IERC20(tokenAddr).balanceOf(wallet);
     }
 
     function checkTokenBalanceIncreaseEqualTo(address wallet, address tokenAddr, uint value) public view {
-        require(IERC20(tokenAddr).balanceOf(wallet) == stagedTokenBalance[tokenAddr][wallet] + value, "checkTokenBalanceIncreaseEqualTo fail");
+        require(IERC20(tokenAddr).balanceOf(wallet) == snappedTokenBalance[tokenAddr][wallet] + value, "checkTokenBalanceIncreaseEqualTo fail");
     }
 
     function checkTokenBalanceIncreaseNotLessThan(address wallet, address tokenAddr, uint value) public view {
-        require(IERC20(tokenAddr).balanceOf(wallet) >= stagedTokenBalance[tokenAddr][wallet] + value, "checkTokenBalanceIncreaseNotLessThan fail");
+        require(IERC20(tokenAddr).balanceOf(wallet) >= snappedTokenBalance[tokenAddr][wallet] + value, "checkTokenBalanceIncreaseNotLessThan fail");
     }
 
     function checkTokenBalanceIncreaseNotMoreThan(address wallet, address tokenAddr, uint value) public view {
-        require(IERC20(tokenAddr).balanceOf(wallet) <= stagedTokenBalance[tokenAddr][wallet] + value, "checkTokenBalanceIncreaseNotMoreThan fail");
+        require(IERC20(tokenAddr).balanceOf(wallet) <= snappedTokenBalance[tokenAddr][wallet] + value, "checkTokenBalanceIncreaseNotMoreThan fail");
     }
 
     function checkTokenBalanceDecreaseEqualTo(address wallet, address tokenAddr, uint value) public view {
-        require(IERC20(tokenAddr).balanceOf(wallet) == stagedTokenBalance[tokenAddr][wallet] - value, "checkTokenBalanceDecreaseEqualTo fail");
+        require(IERC20(tokenAddr).balanceOf(wallet) == snappedTokenBalance[tokenAddr][wallet] - value, "checkTokenBalanceDecreaseEqualTo fail");
     }
 
     function checkTokenBalanceDecreaseNotLessThan(address wallet, address tokenAddr, uint value) public view {
-        require(IERC20(tokenAddr).balanceOf(wallet) <= stagedTokenBalance[tokenAddr][wallet] - value, "checkTokenBalanceDecreaseNotLessThan fail");
+        require(IERC20(tokenAddr).balanceOf(wallet) <= snappedTokenBalance[tokenAddr][wallet] - value, "checkTokenBalanceDecreaseNotLessThan fail");
     }
 
     function checkTokenBalanceDecreaseNotMoreThan(address wallet, address tokenAddr, uint value) public view {
-        require(IERC20(tokenAddr).balanceOf(wallet) >= stagedTokenBalance[tokenAddr][wallet] - value, "checkTokenBalanceDecreaseNotMoreThan fail");
+        require(IERC20(tokenAddr).balanceOf(wallet) >= snappedTokenBalance[tokenAddr][wallet] - value, "checkTokenBalanceDecreaseNotMoreThan fail");
     }
 
 
@@ -124,31 +124,31 @@ contract AssetsCheck {
         require(IERC1155(nftAddr).balanceOf(wallet, tokenId) <= value, "checkNFT1155BalanceNotLessThan fail");
     }
 
-    function stagingNFT1155Balance(address wallet, address nftAddr, uint tokenId) public {
-        stagedNFT1155Balance[nftAddr][tokenId][wallet] = IERC1155(nftAddr).balanceOf(wallet, tokenId);
+    function snapNFT1155Balance(address wallet, address nftAddr, uint tokenId) public {
+        snappedNFT1155Balance[nftAddr][tokenId][wallet] = IERC1155(nftAddr).balanceOf(wallet, tokenId);
     }
 
     function checkNFT1155BalanceIncreaseEqualTo(address wallet, address nftAddr, uint tokenId, uint value) public view {
-        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) == stagedNFT1155Balance[nftAddr][tokenId][wallet] + value, "checkNFT1155BalanceIncreaseEqualTo fail");
+        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) == snappedNFT1155Balance[nftAddr][tokenId][wallet] + value, "checkNFT1155BalanceIncreaseEqualTo fail");
     }
 
     function checkNFT1155BalanceIncreaseNotLessThan(address wallet, address nftAddr, uint tokenId, uint value) public view {
-        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) >= stagedNFT1155Balance[nftAddr][tokenId][wallet] + value, "checkNFT1155BalanceIncreaseNotLessThan fail");
+        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) >= snappedNFT1155Balance[nftAddr][tokenId][wallet] + value, "checkNFT1155BalanceIncreaseNotLessThan fail");
     }
 
     function checkNFT1155BalanceIncreaseNotMoreThan(address wallet, address nftAddr, uint tokenId, uint value) public view {
-        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) <= stagedNFT1155Balance[nftAddr][tokenId][wallet] + value, "checkNFT1155BalanceIncreaseNotMoreThan fail");
+        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) <= snappedNFT1155Balance[nftAddr][tokenId][wallet] + value, "checkNFT1155BalanceIncreaseNotMoreThan fail");
     }
 
     function checkNFT1155BalanceDecreaseEqualTo(address wallet, address nftAddr, uint tokenId, uint value) public view {
-        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) == stagedNFT1155Balance[nftAddr][tokenId][wallet] - value, "checkNFT1155BalanceDecreaseEqualTo fail");
+        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) == snappedNFT1155Balance[nftAddr][tokenId][wallet] - value, "checkNFT1155BalanceDecreaseEqualTo fail");
     }
 
     function checkNFT1155BalanceDecreaseNotLessThan(address wallet, address nftAddr, uint tokenId, uint value) public view {
-        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) <= stagedNFT1155Balance[nftAddr][tokenId][wallet] - value, "checkNFT1155BalanceDecreaseNotLessThan fail");
+        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) <= snappedNFT1155Balance[nftAddr][tokenId][wallet] - value, "checkNFT1155BalanceDecreaseNotLessThan fail");
     }
 
     function checkNFT1155BalanceDecreaseNotMoreThan(address wallet, address nftAddr, uint tokenId, uint value) public view {
-        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) >= stagedNFT1155Balance[nftAddr][tokenId][wallet] - value, "checkNFT1155BalanceDecreaseNotMoreThan fail");
+        require(IERC1155(nftAddr).balanceOf(wallet, tokenId) >= snappedNFT1155Balance[nftAddr][tokenId][wallet] - value, "checkNFT1155BalanceDecreaseNotMoreThan fail");
     }
 }

@@ -167,6 +167,7 @@ describe('MachineGunWallet-test', function () {
     }
 
     async function delay(sec) {
+        console.log('delay.. ' + sec + 's')
         return new Promise((resolve, reject) => {
             setTimeout(resolve, sec * 1000);
         })

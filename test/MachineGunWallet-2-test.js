@@ -74,7 +74,7 @@ describe('MachineGunWallet-2-test', function () {
 
 
         //account0 batchCall with account1's signedBatchCall and other calls
-        let checkData1 = AssetsCheck.interface.encodeFunctionData('stagingTokenBalance', [wallet0.address, usdt.address])
+        let checkData1 = AssetsCheck.interface.encodeFunctionData('snapTokenBalance', [wallet0.address, usdt.address])
 
         const MachineGunWallet = await ethers.getContractFactory('MachineGunWallet')
         let validateBatchCallData = MachineGunWallet.interface.encodeFunctionData('validateBatchCall', [s.toArr, s.valueArr, s.dataArr, s.deadline, s.sender, s.signature])
@@ -151,6 +151,7 @@ describe('MachineGunWallet-2-test', function () {
     }
 
     async function delay(sec) {
+        console.log('delay.. ' + sec + 's')
         return new Promise((resolve, reject) => {
             setTimeout(resolve, sec * 1000);
         })
