@@ -5,10 +5,11 @@ const { BigNumber, utils } = require('ethers')
 
 
 // scroll_alpha 2023-3-26
+// USDC address: 0x67aE69Fd63b4fc8809ADc224A9b82Be976039509
 // ZKPass deployed: 0x6009234967B1c7872de00BB3f3e77610b8D6dc9e
 // SafeboxV2Factory deployed: 0xa877a2247b318b40935E102926Ba5ff4F3b0E8b1
 // MockZKID deployed: 0xeE4D10619E64049102752f5646352943771a3203
-// USDC address: 0x67aE69Fd63b4fc8809ADc224A9b82Be976039509
+// MockERC721 deployed: 0x95de0825D32ce33CbA665E259fE4597E6be0Db27
 
 
 async function main() {
@@ -35,6 +36,7 @@ async function main() {
 	const MockERC721 = await ethers.getContractFactory('MockERC721')
 	const mockERC721 = await MockERC721.deploy('CATASTROPHY CLUB', 'Catastrophy')
 	await mockERC721.deployed()
+	console.log('MockERC721 deployed:', mockERC721.address)
 
 	console.log('done')
 }
