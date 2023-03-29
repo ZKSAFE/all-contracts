@@ -26,12 +26,10 @@ async function main() {
 	// await safeboxFactory.deployed()
 	// console.log('SafeboxV2Factory deployed:', safeboxFactory.address)
 
-	
 	// const MockZKID = await ethers.getContractFactory('MockZKID')
 	// const zkID = await MockZKID.deploy()
 	// await zkID.deployed()
 	// console.log('MockZKID deployed:', zkID.address)
-
 
 	const MockERC721 = await ethers.getContractFactory('MockERC721')
 	const mockERC721 = await MockERC721.deploy('CATASTROPHY CLUB', 'Catastrophy')

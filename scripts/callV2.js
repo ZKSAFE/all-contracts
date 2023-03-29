@@ -8,7 +8,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 const ZKPASS_ADDRESS = '0x6009234967B1c7872de00BB3f3e77610b8D6dc9e'
 const SAFEBOXFACTORY_ADDRESS = '0xa877a2247b318b40935E102926Ba5ff4F3b0E8b1'
 const USDC_ADDRESS = '0x67aE69Fd63b4fc8809ADc224A9b82Be976039509'
-const SAFEBOX_ADDRESS = '0x27370bc7be6584931bf365014cf3ae0b5630ac72'
+const USDT_ADDRESS = '0xf2719572e4E9369cDC061Ef602D0F20f8a42234d'
 const ZKID_ADDRESS = '0xeE4D10619E64049102752f5646352943771a3203'
 const ERC721_ADDRESS = '0x95de0825D32ce33CbA665E259fE4597E6be0Db27'
 
@@ -41,8 +41,8 @@ async function create() {
     const MockZKID = await ethers.getContractFactory('MockZKID')
     const zkID = await MockZKID.attach(ZKID_ADDRESS)
     let bindingID = s(await zkID.onSaleID())
-    console.log('mint zkID to safebox, zkID is:', bindingID)
     await zkID.mint(safeboxAddr)
+    console.log('mint zkID to safebox, zkID is:', bindingID)
 
     //空投NFT
     let tokenId = bindingID
@@ -50,13 +50,14 @@ async function create() {
     const MockERC721 = await ethers.getContractFactory('MockERC721')
     const mockERC721 = await MockERC721.attach(ERC721_ADDRESS)
 	await mockERC721.mintURI(safeboxAddr, tokenId, tokenURI)
+    console.log('mint NFT to safebox, tokenId is:', tokenId)
     
     //需要区块确认后才能读出来
     // await delay(6)
     // console.log('to address:', await zkID.ownerOf(bindingID))
 	// console.log('NFT owner is:', await mockERC721.ownerOf(tokenId), ' tokenURL is:', await mockERC721.tokenURI(tokenId))
 
-    console.log('done')
+    console.log('create done')
 }
 
 
@@ -73,7 +74,8 @@ async function login() {
     const zkID = await MockZKID.attach(ZKID_ADDRESS)
 
     //id可以是zkID，也可以是safebox address
-    let id = '100201'
+    let id = '100205'
+    // let id = '0x3e44c4f7353b53b9446573617a2a833a4fb9b1c1'
     let pwd = '123456'
 
     let safeboxAddr
@@ -108,10 +110,12 @@ async function login() {
             p = await getProof(pwd, safebox.address, nonce, datahash)
             await safebox.resetPk(user, p.proof, p.expiration, p.allhash)
             console.log('resetPk done, enter app..')
+            await enter(safebox.address, user)
 
         } else if(pkAddr == user) {
             //老用户，已绑定私钥，直接进入app
             console.log('safebox had pk, enter app..')
+            await enter(safebox.address, user)
 
         } else {
             //密码正确，但是不是safebox绑定的私钥
@@ -122,10 +126,38 @@ async function login() {
         console.log('wrong password')
     }
 
-    console.log('done')
+    console.log('login done')
 }
 
 
+async function enter(safeboxAddr, walletAddr) {
+    const accounts = await hre.ethers.getSigners()
+    provider = accounts[0].provider
+
+    console.log('ETH balance in safebox:', d(await provider.getBalance(safeboxAddr), 18), ' in wallet:', d(await provider.getBalance(walletAddr), 18))
+    
+    const MockERC20 = await ethers.getContractFactory('MockERC20')
+    const usdc = await MockERC20.attach(USDC_ADDRESS)
+    console.log('USDC balance in safebox:', d(await usdc.balanceOf(safeboxAddr), 6), ' in wallet:', d(await usdc.balanceOf(walletAddr), 6))
+
+    const usdt = await MockERC20.attach(USDT_ADDRESS)
+    console.log('USDT balance in safebox:', d(await usdt.balanceOf(safeboxAddr), 6), ' in wallet:', d(await usdt.balanceOf(walletAddr), 6))
+
+    const MockERC721 = await ethers.getContractFactory('MockERC721')
+    const mockERC721 = await MockERC721.attach(ERC721_ADDRESS)
+    let tokenId = '100205'
+    let nftOwner = await mockERC721.ownerOf(tokenId)
+	if (nftOwner == safeboxAddr) {
+        console.log('NFT in safebox')
+    } else if (nftOwner == walletAddr) {
+        console.log('NFT in wallet')
+    } else {
+        console.log('not own NFT')
+    }
+    console.log(await mockERC721.symbol() + ' #' + tokenId + ' owner is:', nftOwner, ' tokenURL is:', await mockERC721.tokenURI(tokenId)) 
+
+    console.log('enter done')
+}
 
 
 //util
@@ -197,7 +229,7 @@ function m(num, decimals) {
 }
 
 function d(bn, decimals) {
-    return bn.mul(BigNumber.from(100)).div(BigNumber.from(10).pow(decimals)).toNumber() / 100
+    return bn.mul(BigNumber.from(10000)).div(BigNumber.from(10).pow(decimals)).toNumber() / 10000
 }
 
 function b(num) {
