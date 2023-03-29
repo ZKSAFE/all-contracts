@@ -4,12 +4,14 @@ const { BigNumber, utils } = require('ethers')
 const snarkjs = require('snarkjs')
 
 
-
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 const ZKPASS_ADDRESS = '0x6009234967B1c7872de00BB3f3e77610b8D6dc9e'
 const SAFEBOXFACTORY_ADDRESS = '0xa877a2247b318b40935E102926Ba5ff4F3b0E8b1'
 const USDC_ADDRESS = '0x67aE69Fd63b4fc8809ADc224A9b82Be976039509'
 // const SAFEBOX_ADDRESS = '0xd66016D8bF4a981dfA826999f73D2c2937dA06eD'
 const SAFEBOX_ADDRESS = '0x27370bc7be6584931bf365014cf3ae0b5630ac72'
+const ZKID_ADDRESS = '0xeE4D10619E64049102752f5646352943771a3203'
+
 
 var provider
 
@@ -22,10 +24,9 @@ async function create() {
     const SafeboxFactory = await ethers.getContractFactory('SafeboxV2Factory')
     const safeboxFactory = await SafeboxFactory.attach(SAFEBOXFACTORY_ADDRESS)
 
+    // 创建保险箱
     let predictedAddress = await safeboxFactory.newSafeboxAddr(delayer)
     console.log('safebox predictedAddress', predictedAddress)
-
-    // 创建保险箱
     let pwd = '123456'
     let nonce = '1'
     let datahash = '0'
@@ -33,7 +34,19 @@ async function create() {
     let tx = await safeboxFactory.createSafebox(p.proof, p.pwdhash, p.expiration, p.allhash)
     console.log('createSafebox submitted')
     let receipt = await tx.wait()
-    console.log('createSafebox confirmed, safebox address is:', b(receipt.logs[2].topics[2]).toHexString())
+    let safeboxAddr = b(receipt.logs[2].topics[2]).toHexString()
+    console.log('createSafebox confirmed, safebox address is:', safeboxAddr)
+
+    // 把id绑定到保险箱地址
+    const MockZKID = await ethers.getContractFactory('MockZKID')
+    const zkID = await MockZKID.attach(ZKID_ADDRESS)
+    let bindingID = s(await zkID.onSaleID())
+    console.log('mint zkID to safebox, zkID is:', bindingID)
+    await zkID.mint(safeboxAddr)
+
+    //绑定id需要区块确认后才能读出来
+    // await delay(6)
+    // console.log('to address:', await zkID.ownerOf(bindingID))
 
     console.log('done')
 }
@@ -48,36 +61,53 @@ async function login() {
     const ZKPass = await ethers.getContractFactory('ZKPass')
     const zkPass = await ZKPass.attach(ZKPASS_ADDRESS)
 
-    //用户名密码
-    let id = SAFEBOX_ADDRESS
+    const MockZKID = await ethers.getContractFactory('MockZKID')
+    const zkID = await MockZKID.attach(ZKID_ADDRESS)
+
+    //id可以是zkID，也可以是safebox address
+    let id = '100201'
     let pwd = '123456'
 
-    //登录
-    let nonce = s(await zkPass.nonceOf(SAFEBOX_ADDRESS))
-    let datahash = '0'
-    let p = await getProof(pwd, SAFEBOX_ADDRESS, nonce, datahash)
+    let safeboxAddr
+    if (utils.isAddress(id)) {
+        //id是safebox address
+        safeboxAddr = id
+    } else {
+        //id是zkID
+        safeboxAddr = await zkID.ownerOf(id)
+    }
+    console.log('safebox address is:', safeboxAddr)
+    if (safeboxAddr == ZERO_ADDRESS) {
+        console.log('wrong id')
+        return
+    }
 
-    if (p.pwdhash == s(await zkPass.pwdhashOf(SAFEBOX_ADDRESS))) {
+    //登录
+    let nonce = s(await zkPass.nonceOf(safeboxAddr))
+    let datahash = '0'
+    let p = await getProof(pwd, safeboxAddr, nonce, datahash)
+
+    if (p.pwdhash == s(await zkPass.pwdhashOf(safeboxAddr))) {
         console.log('password correct')
 
         const Safebox = await ethers.getContractFactory('SafeboxV2')
-        const safebox = await Safebox.attach(SAFEBOX_ADDRESS)
+        const safebox = await Safebox.attach(safeboxAddr)
 
         let pkAddr = await safebox.pkAddr()
-        if (pkAddr == '0x0000000000000000000000000000000000000000') {
+        if (pkAddr == ZERO_ADDRESS) {
             //新用户，未绑定私钥，引导他绑定
             datahash = s(b(user))
             p = await getProof(pwd, safebox.address, nonce, datahash)
             await safebox.resetPk(user, p.proof, p.expiration, p.allhash)
             console.log('resetPk done, enter app..')
+
+        } else if(pkAddr == user) {
+            //老用户，已绑定私钥，直接进入app
+            console.log('safebox had pk, enter app..')
+
         } else {
-            if (pkAddr == user) {
-                //老用户，已绑定私钥，直接进入app
-                console.log('safebox had pk, enter app..')
-            } else {
-                //密码正确，但是不是safebox绑定的私钥
-                console.log('not the safebox owner')
-            }
+            //密码正确，但是不是safebox绑定的私钥
+            console.log('not the safebox owner, only owner can enter')
         }
         
     } else {

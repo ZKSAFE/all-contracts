@@ -18,6 +18,13 @@ describe('ZKID-test', function () {
         await zkID.deployed()
         console.log('zkID deployed:', zkID.address, 'name:', await zkID.name())
 
+        // const MockZKID = await ethers.getContractFactory('MockZKID')
+        // const mockZKID = await MockZKID.deploy()
+        // await mockZKID.deployed()
+        // console.log('MockZKID deployed:', mockZKID.address, 'name:', await mockZKID.name())
+        // await mockZKID.mint(accounts[0].address)
+        // console.log('addressOf', await mockZKID.addressOf('100201'))
+
         await print()
     })
 
