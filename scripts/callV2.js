@@ -58,24 +58,30 @@ async function login() {
     let p = await getProof(pwd, SAFEBOX_ADDRESS, nonce, datahash)
 
     if (p.pwdhash == s(await zkPass.pwdhashOf(SAFEBOX_ADDRESS))) {
-        console.log('密码正确')
+        console.log('password correct')
 
         const Safebox = await ethers.getContractFactory('SafeboxV2')
         const safebox = await Safebox.attach(SAFEBOX_ADDRESS)
 
-        if (await safebox.pkAddr() == '0x0000000000000000000000000000000000000000') {
+        let pkAddr = await safebox.pkAddr()
+        if (pkAddr == '0x0000000000000000000000000000000000000000') {
             //新用户，未绑定私钥，引导他绑定
             datahash = s(b(user))
             p = await getProof(pwd, safebox.address, nonce, datahash)
             await safebox.resetPk(user, p.proof, p.expiration, p.allhash)
             console.log('resetPk done, enter app..')
         } else {
-            //老用户，已绑定私钥，直接进入app
-            console.log('safebox had pk, enter app..')
+            if (pkAddr == user) {
+                //老用户，已绑定私钥，直接进入app
+                console.log('safebox had pk, enter app..')
+            } else {
+                //密码正确，但是不是safebox绑定的私钥
+                console.log('not the safebox owner')
+            }
         }
         
     } else {
-        console.log('密码错误')
+        console.log('wrong password')
     }
 
     console.log('done')
