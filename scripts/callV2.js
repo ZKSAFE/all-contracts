@@ -11,6 +11,7 @@ const USDC_ADDRESS = '0x67aE69Fd63b4fc8809ADc224A9b82Be976039509'
 // const SAFEBOX_ADDRESS = '0xd66016D8bF4a981dfA826999f73D2c2937dA06eD'
 const SAFEBOX_ADDRESS = '0x27370bc7be6584931bf365014cf3ae0b5630ac72'
 const ZKID_ADDRESS = '0xeE4D10619E64049102752f5646352943771a3203'
+const ERC721_ADDRESS = '0xeE4D10619E64049102752f5646352943771a3203'
 
 
 var provider
@@ -44,9 +45,17 @@ async function create() {
     console.log('mint zkID to safebox, zkID is:', bindingID)
     await zkID.mint(safeboxAddr)
 
-    //绑定id需要区块确认后才能读出来
+    //空投NFT
+    let tokenId = bindingID
+    let tokenURI = 'https://i.seadn.io/gcs/files/92ed2c565f294ec77736abb5a0066050.png'
+    const MockERC721 = await ethers.getContractFactory('MockERC721')
+    const mockERC721 = await MockERC721.attach(ERC721_ADDRESS)
+	await mockERC721.mintURI(safeboxAddr, tokenId, tokenURI)
+    
+    //需要区块确认后才能读出来
     // await delay(6)
     // console.log('to address:', await zkID.ownerOf(bindingID))
+	// console.log('NFT owner is:', await mockERC721.ownerOf(tokenId), ' tokenURL is:', await mockERC721.tokenURI(tokenId))
 
     console.log('done')
 }
