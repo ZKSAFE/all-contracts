@@ -160,6 +160,69 @@ async function enter(safeboxAddr, walletAddr) {
 }
 
 
+async function deposit() {
+    const accounts = await hre.ethers.getSigners()
+    provider = accounts[0].provider
+    const user = accounts[0].address
+    console.log('caller: ', user)
+
+    let safeboxAddr = '0x3e44c4f7353b53b9446573617a2a833a4fb9b1c1'
+    let amount = s(m(20, 6)) //充值金额20U USDC\USDT都是6位小数
+
+    const MockERC20 = await ethers.getContractFactory('MockERC20')
+    const usdc = await MockERC20.attach(USDC_ADDRESS)
+    await usdc.transfer(safeboxAddr, amount)
+    console.log('deposit USDC done')
+    
+    const usdt = await MockERC20.attach(USDT_ADDRESS)
+    await usdt.transfer(safeboxAddr, amount)
+    console.log('deposit USDT done')
+}
+
+
+async function withdraw() {
+    const accounts = await hre.ethers.getSigners()
+    provider = accounts[0].provider
+    const user = accounts[0].address
+    console.log('caller: ', user)
+
+    let safeboxAddr = '0x3e44c4f7353b53b9446573617a2a833a4fb9b1c1'
+    const Safebox = await ethers.getContractFactory('SafeboxV2')
+    const safebox = await Safebox.attach(safeboxAddr)
+
+    //user input
+    let amount = m(11, 6) //提款金额20U USDC\USDT都是6位小数
+    let receiver = user //提款给谁
+
+    //检查safebox免密提取的额度，注意稳定币是按18位小数来算
+    let arr = await safebox.getWithdrawLimit()
+    let ethFree = d(arr[0], 18)
+    let usdFree = d(arr[0], 18)
+    console.log('safebox withdrawLimit: ethFree:', ethFree, ' usdFree:', usdFree)
+
+    let to = USDC_ADDRESS
+    let value = m(0, 18) //ETH数量，0
+    const ERC = await ethers.getContractFactory('MockERC20')
+    let data = ERC.interface.encodeFunctionData('transfer(address,uint256)', [receiver, amount])
+
+    if (usdFree >= d(amount, 6)) { //小额免密
+        await safebox.call(to, value, data)
+        console.log('withdraw small USDT done')
+    
+    } else { //大额需要密码
+        let pwd = '123456' //user input
+
+        const ZKPass = await ethers.getContractFactory('ZKPass')
+        const zkPass = await ZKPass.attach(ZKPASS_ADDRESS)
+        let nonce = s(await zkPass.nonceOf(safebox.address))
+        let datahash = utils.solidityKeccak256(['address','uint256','bytes'], [to, value, data])
+        let p = await getProof(pwd, safebox.address, nonce, datahash)
+        await safebox.call2(to, value, data, p.proof, p.expiration, p.allhash)
+        console.log('withdraw big USDT done')
+    }
+}
+
+
 //util
 async function getProof(pwd, address, nonce, datahash) {
     let expiration = parseInt(Date.now() / 1000 + 600)
