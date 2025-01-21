@@ -1,49 +1,53 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/Context.sol";
+import "../zkPass/ZKPass.sol";
 import "./SafeboxV2.sol";
 
 contract SafeboxV2Factory is Context {
+    ZKPass public zkPass;
 
-    address[] public safeboxParams;
+    event SafeboxOwner(address indexed user, address indexed safebox);
 
-    uint public count;
-
-    mapping(uint => address) public safeboxes;
+    mapping(address => address) public userToSafebox;
 
     mapping(address => uint) public nonceOf;
 
-    event CreateSafebox(address indexed creator, address indexed safebox);
-
-    constructor(address[] memory _safeboxParams) {
-        safeboxParams = _safeboxParams;
+    constructor(address zkPassAddr) {
+        zkPass = ZKPass(zkPassAddr);
     }
 
     ///////////////////////////////////
     // Safebox
     ///////////////////////////////////
 
-    function createSafebox(
-        uint[8] memory proof,
-        uint pwdhash,
-        uint expiration,
-        uint allhash
-    ) public returns (address) {
-        count++;
+    function createSafebox() public returns (address) {
+        require(
+            userToSafebox[_msgSender()] == address(0),
+            "SafeboxFactory::createSafebox: Safebox exist"
+        );
 
         uint nonce = nonceOf[_msgSender()] + 1;
         nonceOf[_msgSender()] = nonce;
         bytes32 salt = keccak256(abi.encodePacked(_msgSender(), nonce));
 
-        SafeboxV2 box = new SafeboxV2{salt: salt}(safeboxParams);
-        box.resetPwd(proof, 0, 0, proof, pwdhash, expiration, allhash);
+        SafeboxV2 box = new SafeboxV2{salt: salt}();
+        box.init(_msgSender());
 
-        safeboxes[count] = address(box);
-        emit CreateSafebox(_msgSender(), address(box));
+        userToSafebox[_msgSender()] = address(box);
+
+        emit SafeboxOwner(_msgSender(), address(box));
         return address(box);
     }
 
-    function newSafeboxAddr(address user) public view returns (address) {
+    function getSafeboxAddr(address user) public view returns (address) {
+        address existAddr = userToSafebox[user];
+
+        if (existAddr != address(0)) {
+            return existAddr;
+        }
+
         uint nonce = nonceOf[user] + 1;
         bytes32 salt = keccak256(abi.encodePacked(user, nonce));
         address predictedAddr = address(
@@ -54,9 +58,7 @@ contract SafeboxV2Factory is Context {
                             bytes1(0xff),
                             address(this),
                             salt,
-                            keccak256(
-                                abi.encodePacked(type(SafeboxV2).creationCode, abi.encode(safeboxParams))
-                            )
+                            keccak256(type(SafeboxV2).creationCode)
                         )
                     )
                 )
